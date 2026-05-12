@@ -4,7 +4,9 @@ import { resolve } from 'node:path';
 import { parseScheduleResponse } from '../../src/lolesports.js';
 
 const fixturePath = resolve(__dirname, '../../fixtures/lck-schedule-sample.json');
-const fixture = JSON.parse(readFileSync(fixturePath, 'utf-8'));
+const fixture = JSON.parse(readFileSync(fixturePath, 'utf-8')) as Parameters<
+  typeof parseScheduleResponse
+>[0];
 
 describe('parseScheduleResponse', () => {
   it('type !== "match"인 event는 제외한다', () => {

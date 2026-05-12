@@ -175,7 +175,12 @@ function formatKstCompact(utcDate: Date): string {
  * 트릭이 호출부로 새지 않도록 이 함수 안에 가둬둠.
  */
 function toKstParts(utcDate: Date): {
-  y: string; mo: string; d: string; h: string; mi: string; s: string;
+  y: string;
+  mo: string;
+  d: string;
+  h: string;
+  mi: string;
+  s: string;
 } {
   const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
   const shifted = new Date(utcDate.getTime() + KST_OFFSET_MS);

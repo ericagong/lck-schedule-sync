@@ -32,9 +32,7 @@ async function main(): Promise<void> {
   await mkdir(dirname(OUTPUT_PATH), { recursive: true });
   await writeFile(OUTPUT_PATH, ics, 'utf-8');
 
-  console.log(
-    `[lck-schedule-sync] Wrote ${count} ${TEAM_CODE} matches → ${OUTPUT_PATH}`,
-  );
+  console.log(`[lck-schedule-sync] Wrote ${count} ${TEAM_CODE} matches → ${OUTPUT_PATH}`);
 }
 
 main().catch((err) => {

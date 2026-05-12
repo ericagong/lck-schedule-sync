@@ -37,9 +37,7 @@ export async function fetchSchedule(leagueId: string): Promise<Match[]> {
     const response = await fetch(url, { headers: { 'x-api-key': API_KEY } });
 
     if (!response.ok) {
-      throw new Error(
-        `lolesports API failed: ${response.status} ${response.statusText}`,
-      );
+      throw new Error(`lolesports API failed: ${response.status} ${response.statusText}`);
     }
 
     const json = (await response.json()) as ScheduleApiResponse;

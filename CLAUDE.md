@@ -88,9 +88,7 @@ pnpm typecheck
 
 1. **TeamRef union 도입**: 토너먼트는 TBD 팀이 등장 (예: "Bracket Winner R1")
    ```ts
-   type TeamRef =
-     | { kind: 'team'; team: Team }
-     | { kind: 'tbd'; sourceDescription: string }; // "1라운드 승자" 등
+   type TeamRef = { kind: 'team'; team: Team } | { kind: 'tbd'; sourceDescription: string }; // "1라운드 승자" 등
    ```
 2. **Match 타입을 두 형태로 확장**: `KnownMatch` (현재) + `TbdMatch` (Phase 1)
 3. **`parseScheduleResponse`에서 TBD 처리**: 현재 코드는 TBD 매치를 제외. Phase 1엔 포함

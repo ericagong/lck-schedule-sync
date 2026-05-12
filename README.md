@@ -6,12 +6,12 @@
 
 ## 차별점
 
-| 비교점 | 톡캘린더·OP.GG 앱 | 이 서비스 |
-|---|---|---|
-| 앱 종속 | 카카오톡·OP.GG 앱 필수 | **모든 캘린더 호환** |
-| 필터링 | 리그 단위 | **팀 단위 (T1만, 노이즈 84% 제거)** |
-| 충돌 검사 | 안 됨 | **자기 캘린더 일정과 시각 통합** |
-| 알림 설정 | 앱이 정한 형식 | **캘린더 앱이 정한 형식 (자기 취향)** |
+| 비교점    | 톡캘린더·OP.GG 앱      | 이 서비스                             |
+| --------- | ---------------------- | ------------------------------------- |
+| 앱 종속   | 카카오톡·OP.GG 앱 필수 | **모든 캘린더 호환**                  |
+| 필터링    | 리그 단위              | **팀 단위 (T1만, 노이즈 84% 제거)**   |
+| 충돌 검사 | 안 됨                  | **자기 캘린더 일정과 시각 통합**      |
+| 알림 설정 | 앱이 정한 형식         | **캘린더 앱이 정한 형식 (자기 취향)** |
 
 ## 구독 방법
 
@@ -22,16 +22,19 @@ https://<username>.github.io/lck-schedule-sync/t1.ics
 ```
 
 ### Google Calendar
+
 1. Google Calendar 좌측 사이드바 `다른 캘린더` 옆 `+` 클릭
 2. `URL로 추가` 선택
 3. 위 URL 붙여넣기
 4. `캘린더 추가` 클릭
 
 ### Apple Calendar (iOS/macOS)
+
 1. `파일` → `새로운 캘린더 구독` (macOS) 또는 설정 → 캘린더 → 계정 추가 → 기타 → 구독 캘린더 추가 (iOS)
 2. URL 입력 후 구독
 
 ### Outlook
+
 1. 좌측 `캘린더 추가` → `인터넷에서 구독`
 2. URL 입력
 
@@ -42,26 +45,32 @@ https://<username>.github.io/lck-schedule-sync/t1.ics
 ### 시나리오별 가이드
 
 **경기 시작 N분 전 알림 받기 (Google Calendar)**
+
 1. 좌측 사이드바에서 `T1 LCK 일정` 캘린더 호버 → ⋮ → `설정 및 공유`
 2. `이벤트 알림` 섹션에서 원하는 시간 추가 (15분 전, 1시간 전 등)
 3. 이 설정은 모든 매치에 자동 적용됩니다
 
 **캘린더 색 변경**
+
 1. 좌측 사이드바에서 캘린더 호버 → ⋮ → 색상 선택
 
 **잠시 알림 끄기**
+
 - 좌측 사이드바에서 캘린더 토글 끄기 → 일정은 보이되 알림은 안 옴
 
 **Apple Calendar로 옮기기**
+
 - 같은 URL을 Apple Calendar에서 구독하면 끝. 동기화는 자동.
 
 ## 개발
 
 ### 요구사항
+
 - Node.js >= 20
 - pnpm 9 (`npm install -g pnpm` 또는 `corepack enable && corepack prepare pnpm@9 --activate`)
 
 ### 명령어
+
 ```bash
 pnpm install
 pnpm dev          # 로컬에서 t1.ics 생성 → public/t1.ics
@@ -70,6 +79,7 @@ pnpm typecheck    # 타입 체크만
 ```
 
 ### 폴더 구조
+
 ```
 src/
 ├── core/types.ts       # Match, Team 도메인 타입
@@ -82,6 +92,7 @@ src/
 ```
 
 ### 설계 원칙
+
 - **SRP**: side effect는 `lolesports.ts`와 `main.ts`에만
 - **순수 함수 우선**: filter, ics-generator, pipeline 모두 테스트 가능
 - **멱등성**: lolesports `match.id`를 ICS UID로 사용 → 갱신 시 같은 이벤트 갱신
@@ -92,6 +103,7 @@ src/
 ## 갱신 주기
 
 GitHub Actions cron으로 **매일 2회** 자동 갱신:
+
 - 새벽 04:00 KST — 다음날 일정 확보
 - 저녁 23:00 KST — 그날 경기 종료 후 토너먼트 대진 즉시 반영
 

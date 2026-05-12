@@ -14,9 +14,7 @@ import type { Match } from './core/types.js';
  * @returns teamA 또는 teamB의 code가 일치하는 매치만 (순서 보존)
  */
 export function filterByTeam(matches: readonly Match[], teamCode: string): Match[] {
-  return matches.filter(
-    (m) => m.teamA.code === teamCode || m.teamB.code === teamCode,
-  );
+  return matches.filter((m) => m.teamA.code === teamCode || m.teamB.code === teamCode);
 }
 
 /**
