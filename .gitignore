@@ -7,8 +7,6 @@ dist/
 
 # 빌드 산출물은 GitHub Actions가 직접 GitHub Pages로 배포하므로 git에 안 넣음
 public/*.ics
-# 단, 검증용 historical ICS는 임시로 커밋 허용 (Phase 1 시각 검증 후 제거 예정)
-!public/t1-2025-historical.ics
 
 # pnpm 디버그 로그
 .pnpm-debug.log*
