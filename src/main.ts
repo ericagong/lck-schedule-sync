@@ -2,7 +2,7 @@
  * 진입점.
  *
  * side effect 모음:
- * 1) lolesports API fetch (LCK)
+ * 1) lolesports API fetch (LCK · MSI · Worlds · First Stand)
  * 2) T1 ICS 생성
  * 3) public/t1.ics에 쓰기
  *
@@ -12,16 +12,16 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
-import { fetchSchedule, LEAGUE_IDS } from './lolesports.js';
+import { fetchAllMatches } from './lolesports.js';
 import { buildIcsForTeam } from './pipeline.js';
 
 const OUTPUT_PATH = resolve(process.cwd(), 'public', 't1.ics');
 const TEAM_CODE = 'T1';
 
 async function main(): Promise<void> {
-  console.log(`[lck-schedule-sync] Fetching LCK schedule...`);
-  const allMatches = await fetchSchedule(LEAGUE_IDS.LCK);
-  console.log(`[lck-schedule-sync] Fetched ${allMatches.length} LCK matches.`);
+  console.log(`[lck-schedule-sync] Fetching schedules (LCK + MSI + Worlds + First Stand)...`);
+  const allMatches = await fetchAllMatches();
+  console.log(`[lck-schedule-sync] Fetched ${allMatches.length} matches across 4 leagues.`);
 
   const { ics, count } = buildIcsForTeam({
     matches: allMatches,

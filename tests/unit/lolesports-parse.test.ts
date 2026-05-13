@@ -99,3 +99,84 @@ describe('parseScheduleResponse', () => {
     expect(matches).toHaveLength(0);
   });
 });
+
+describe('parseScheduleResponse — Phase 2 leagues (MSI · Worlds · First Stand)', () => {
+  function loadFixture(name: string): Parameters<typeof parseScheduleResponse>[0] {
+    return JSON.parse(
+      readFileSync(resolve(__dirname, `../../fixtures/${name}`), 'utf-8'),
+    ) as Parameters<typeof parseScheduleResponse>[0];
+  }
+
+  describe('MSI', () => {
+    const fixture = loadFixture('msi-schedule-sample.json');
+
+    it('sample 3 매치를 동일 parser로 모두 변환한다 (DTO 동일성 회귀)', () => {
+      const { matches } = parseScheduleResponse(fixture);
+      expect(matches).toHaveLength(3);
+    });
+
+    it('league.name "MSI"가 tournament.displayName으로 흐른다', () => {
+      const { matches } = parseScheduleResponse(fixture);
+      expect(matches.every((m) => m.tournament.displayName === 'MSI')).toBe(true);
+    });
+
+    it('MSI blockName(플레이-인 / 토너먼트 스테이지 / 결승)이 stage로 흐른다', () => {
+      const { matches } = parseScheduleResponse(fixture);
+      const stages = new Set(matches.map((m) => m.tournament.stage));
+      expect(stages.size).toBeGreaterThanOrEqual(2); // sample이 1-per-blockName 추출
+    });
+  });
+
+  describe('Worlds', () => {
+    const fixture = loadFixture('worlds-schedule-sample.json');
+
+    it('sample 5 매치를 동일 parser로 모두 변환한다', () => {
+      const { matches } = parseScheduleResponse(fixture);
+      expect(matches).toHaveLength(5);
+    });
+
+    it('한국어 league.name "월드 챔피언십"이 tournament.displayName으로 흐른다', () => {
+      const { matches } = parseScheduleResponse(fixture);
+      expect(matches.every((m) => m.tournament.displayName === '월드 챔피언십')).toBe(true);
+    });
+
+    it('Worlds blockName(스위스 / 8강 / 4강 / 결승 등)이 stage로 흐른다', () => {
+      const { matches } = parseScheduleResponse(fixture);
+      const stages = new Set(matches.map((m) => m.tournament.stage));
+      expect(stages.size).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('First Stand', () => {
+    const fixture = loadFixture('first-stand-schedule-sample.json');
+
+    it('sample 4 매치를 동일 parser로 모두 변환한다', () => {
+      const { matches } = parseScheduleResponse(fixture);
+      expect(matches).toHaveLength(4);
+    });
+
+    it('league.name "First Stand"가 tournament.displayName으로 흐른다', () => {
+      const { matches } = parseScheduleResponse(fixture);
+      expect(matches.every((m) => m.tournament.displayName === 'First Stand')).toBe(true);
+    });
+
+    it('First Stand blockName(1라운드 / 그룹 / 4강 / 결승)이 stage로 흐른다', () => {
+      const { matches } = parseScheduleResponse(fixture);
+      const stages = new Set(matches.map((m) => m.tournament.stage));
+      expect(stages.size).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it('events가 빈 배열이면 빈 Match[]을 반환한다 (시즌 미발표 시점 처리)', () => {
+    const empty = {
+      data: {
+        schedule: {
+          pages: { older: null, newer: null },
+          events: [],
+        },
+      },
+    } as Parameters<typeof parseScheduleResponse>[0];
+    const { matches } = parseScheduleResponse(empty);
+    expect(matches).toHaveLength(0);
+  });
+});

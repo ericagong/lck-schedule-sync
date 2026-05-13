@@ -1,0 +1,254 @@
+{
+  "data": {
+    "schedule": {
+      "pages": {
+        "older": null,
+        "newer": null
+      },
+      "events": [
+        {
+          "startTime": "2024-10-03T13:00:00Z",
+          "state": "completed",
+          "type": "match",
+          "blockName": "스위스",
+          "league": {
+            "name": "월드 챔피언십",
+            "slug": "worlds"
+          },
+          "match": {
+            "id": "112966669924129225",
+            "flags": [
+              "hasVod"
+            ],
+            "teams": [
+              {
+                "name": "TOP ESPORTS",
+                "code": "TES",
+                "image": "http://static.lolesports.com/teams/1592592064571_TopEsportsTES-01-FullonDark.png",
+                "result": {
+                  "outcome": "win",
+                  "gameWins": 1
+                },
+                "record": {
+                  "wins": 3,
+                  "losses": 1
+                }
+              },
+              {
+                "name": "T1",
+                "code": "T1",
+                "image": "http://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png",
+                "result": {
+                  "outcome": "loss",
+                  "gameWins": 0
+                },
+                "record": {
+                  "wins": 3,
+                  "losses": 1
+                }
+              }
+            ],
+            "strategy": {
+              "type": "bestOf",
+              "count": 1
+            }
+          }
+        },
+        {
+          "startTime": "2024-10-17T12:00:00Z",
+          "state": "completed",
+          "type": "match",
+          "blockName": "8강",
+          "league": {
+            "name": "월드 챔피언십",
+            "slug": "worlds"
+          },
+          "match": {
+            "id": "112966669924194845",
+            "flags": [
+              "hasVod"
+            ],
+            "teams": [
+              {
+                "name": "WeiboGaming",
+                "code": "WBG",
+                "image": "http://static.lolesports.com/teams/1641202879910_3.png",
+                "result": {
+                  "outcome": "win",
+                  "gameWins": 3
+                },
+                "record": {
+                  "wins": 1,
+                  "losses": 1
+                }
+              },
+              {
+                "name": "Suzhou LNG Esports",
+                "code": "LNG",
+                "image": "http://static.lolesports.com/teams/1717487697003_LNGlogo.png",
+                "result": {
+                  "outcome": "loss",
+                  "gameWins": 1
+                },
+                "record": {
+                  "wins": 0,
+                  "losses": 1
+                }
+              }
+            ],
+            "strategy": {
+              "type": "bestOf",
+              "count": 5
+            }
+          }
+        },
+        {
+          "startTime": "2024-10-26T12:00:00Z",
+          "state": "completed",
+          "type": "match",
+          "blockName": "4강",
+          "league": {
+            "name": "월드 챔피언십",
+            "slug": "worlds"
+          },
+          "match": {
+            "id": "112966669924194869",
+            "flags": [
+              "hasVod",
+              "isSpoiler"
+            ],
+            "teams": [
+              {
+                "name": "WeiboGaming",
+                "code": "WBG",
+                "image": "http://static.lolesports.com/teams/1641202879910_3.png",
+                "result": {
+                  "outcome": "loss",
+                  "gameWins": 0
+                },
+                "record": {
+                  "wins": 1,
+                  "losses": 1
+                }
+              },
+              {
+                "name": "BILIBILI GAMING",
+                "code": "BLG",
+                "image": "http://static.lolesports.com/teams/1682322954525_Bilibili_Gaming_logo_20211.png",
+                "result": {
+                  "outcome": "win",
+                  "gameWins": 3
+                },
+                "record": {
+                  "wins": 2,
+                  "losses": 1
+                }
+              }
+            ],
+            "strategy": {
+              "type": "bestOf",
+              "count": 5
+            }
+          }
+        },
+        {
+          "startTime": "2024-11-02T14:00:00Z",
+          "state": "completed",
+          "type": "match",
+          "blockName": "결승",
+          "league": {
+            "name": "월드 챔피언십",
+            "slug": "worlds"
+          },
+          "match": {
+            "id": "112966669924194881",
+            "flags": [
+              "hasVod",
+              "isSpoiler"
+            ],
+            "teams": [
+              {
+                "name": "T1",
+                "code": "T1",
+                "image": "http://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png",
+                "result": {
+                  "outcome": "win",
+                  "gameWins": 3
+                },
+                "record": {
+                  "wins": 3,
+                  "losses": 0
+                }
+              },
+              {
+                "name": "BILIBILI GAMING",
+                "code": "BLG",
+                "image": "http://static.lolesports.com/teams/1682322954525_Bilibili_Gaming_logo_20211.png",
+                "result": {
+                  "outcome": "loss",
+                  "gameWins": 2
+                },
+                "record": {
+                  "wins": 2,
+                  "losses": 1
+                }
+              }
+            ],
+            "strategy": {
+              "type": "bestOf",
+              "count": 5
+            }
+          }
+        },
+        {
+          "startTime": "2025-10-14T08:00:00Z",
+          "state": "completed",
+          "type": "match",
+          "blockName": "플레이-인 토너먼트 스테이지",
+          "league": {
+            "name": "월드 챔피언십",
+            "slug": "worlds"
+          },
+          "match": {
+            "id": "113475493522079909",
+            "flags": [
+              "hasVod"
+            ],
+            "teams": [
+              {
+                "name": "Invictus Gaming",
+                "code": "IG",
+                "image": "http://static.lolesports.com/teams/1634762917340_300px-Invictus_Gaming_logo.png",
+                "result": {
+                  "outcome": "loss",
+                  "gameWins": 1
+                },
+                "record": {
+                  "wins": 0,
+                  "losses": 1
+                }
+              },
+              {
+                "name": "T1",
+                "code": "T1",
+                "image": "http://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png",
+                "result": {
+                  "outcome": "win",
+                  "gameWins": 3
+                },
+                "record": {
+                  "wins": 1,
+                  "losses": 0
+                }
+              }
+            ],
+            "strategy": {
+              "type": "bestOf",
+              "count": 5
+            }
+          }
+        }
+      ]
+    }
+  }
+}

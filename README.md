@@ -150,9 +150,9 @@ Google Calendar의 ICS 폴링 주기(1~2시간) 때문에 캘린더 반영까지
 
 ## 향후 계획
 
-- **Phase 1**: LCK 플레이오프 + 결승 + LCK CUP + Road to MSI
-- **Phase 2**: MSI + Worlds + First Stand + EWC/KeSPA Cup/아시안 게임 (수동 입력)
-- **Phase 3**: 응원팀별 다중 `.ics` 발행 (geng.ics 등) + 단일 통합 출력
+- **Phase 1~2 (완료)**: LCK 전 단계(정규·플옵·결승·플레이-인) + 국제 대회 (MSI · Worlds · First Stand) 단일 통합 `.ics`
+- **Phase 3 (다음)**: EWC · KeSPA Cup · 아시안 게임 (네이버 esports JSON API 자동화, T1 출전 확정 시 반응형)
+- **Phase 4**: 응원팀별 다중 `.ics` 발행 (geng.ics 등)
 
 ## 라이선스
 

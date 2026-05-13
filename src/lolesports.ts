@@ -54,6 +54,23 @@ export async function fetchSchedule(leagueId: string): Promise<Match[]> {
   return allMatches;
 }
 
+/**
+ * 커버하는 모든 리그(LCK · MSI · Worlds · First Stand)의 스케줄을
+ * 순차 fetch해 단일 Match[] 로 합쳐 반환.
+ *
+ * 순차 호출 이유: 페이지네이션 포함 분당 ~20회 미만 유지, lolesports 부담 최소.
+ * 한 리그 실패 시 throw → 전체 중단. partial publish는 "왜 한 대회만 사라졌지"
+ * 혼란을 유발하므로 회피. 매일 2회 cron이 다음 회차에서 흡수.
+ */
+export async function fetchAllMatches(): Promise<Match[]> {
+  const all: Match[] = [];
+  for (const leagueId of Object.values(LEAGUE_IDS)) {
+    const matches = await fetchSchedule(leagueId);
+    all.push(...matches);
+  }
+  return all;
+}
+
 function buildScheduleUrl(leagueId: string, pageToken?: string): string {
   const params = new URLSearchParams({ hl: 'ko-KR', leagueId });
   if (pageToken !== undefined) params.set('pageToken', pageToken);
