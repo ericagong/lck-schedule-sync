@@ -137,7 +137,7 @@ src/
 - **멱등성**: lolesports `match.id`를 ICS UID로 사용 → 갱신 시 같은 이벤트 갱신
 - **개인화는 위임**: VALARM 미포함, 캘린더 앱이 알림 책임
 
-자세한 설계 의사결정은 [`plan.md`](./plan.md) 참조.
+자세한 설계 의사결정·트레이드오프·정찰 결과는 [`CLAUDE.md`](./CLAUDE.md) 참조.
 
 ## 갱신 주기
 
