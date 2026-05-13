@@ -17,3 +17,6 @@ public/*.ics
 
 # 로컬 캡처용 API fixture (시점 데이터라 stale될 수 있음)
 fixtures/
+
+# main.ts가 작성하는 fallback 발동 marker (GitHub Actions가 같은 워크플로 안에서 읽음)
+.fetch-source

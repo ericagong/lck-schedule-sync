@@ -11,6 +11,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  issues: write # fallback 발동 시 운영 알람 Issue 자동 생성
 
 concurrency:
   group: pages
@@ -43,6 +44,54 @@ jobs:
         uses: actions/upload-pages-artifact@v5
         with:
           path: public
+
+      - name: Detect Naver → lolesports fallback
+        id: fallback_check
+        run: |
+          if [ -f .fetch-source ]; then
+            source=$(cat .fetch-source)
+            echo "source=$source" >> "$GITHUB_OUTPUT"
+            if [ "$source" = "fallback" ]; then
+              echo "triggered=true" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Open GitHub Issue on fallback (운영 가시성)
+        if: steps.fallback_check.outputs.triggered == 'true'
+        # Issue 생성 실패가 ICS deploy를 막으면 안 됨 (운영자 알람 < 사용자 ICS 갱신)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          today=$(date -u +%Y-%m-%d)
+          title="[운영 알람] $today Naver fetch 실패 → lolesports fallback 발동"
+          # 같은 제목의 open Issue 있으면 스킵 (cron 매일 2회 발생 시 중복 회피)
+          existing=$(gh issue list --search "\"$title\" in:title is:open" --json number --jq '.[0].number' 2>/dev/null || echo "")
+          if [ -n "$existing" ]; then
+            echo "Issue #$existing already open — skipping creation"
+            exit 0
+          fi
+          gh issue create \
+            --title "$title" \
+            --body "$(cat <<EOF
+          ## 자동 알람
+
+          매일 cron이 \`pnpm dev\` 실행 중 **Naver esports API에서 throw → lolesports fallback으로 자동 전환**됨. ICS는 정상 발행됨 (lolesports 매치만, KeSPA·EWC 누락).
+
+          ## 권장 액션
+
+          1. \`Actions\` 탭에서 이 워크플로 로그 확인 → primary error 메시지 (\`Naver esports API failed: ...\`)
+          2. 일시적 429/timeout이면 무시 가능 (다음 cron에서 자동 회복)
+          3. 지속되면 Naver topLeagueId 변경 또는 endpoint 폐기 가능성 — \`CLAUDE.md\` Step A 정찰 절차 재실행
+          4. 정상 회복 확인되면 본 Issue close
+
+          ## 참고
+
+          - 실행: \`${{ github.run_id }}\` (\`${{ github.workflow }}\`)
+          - 시각: $today
+          - Phase 3 fallback 정책: \`CLAUDE.md\` "Phase 3 데이터 소스 전환 결정" 섹션
+          EOF
+          )"
 
   deploy:
     needs: build
