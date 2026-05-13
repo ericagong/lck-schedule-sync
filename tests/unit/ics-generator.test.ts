@@ -123,4 +123,48 @@ describe('generateIcs', () => {
     const b = generateIcs([sampleMatch], { calendarName: 'T1', now: FIXED_NOW });
     expect(a).toBe(b);
   });
+
+  describe('RFC 5545 line folding (75바이트 경계)', () => {
+    // 한국어 1글자 = UTF-8 3바이트. 75바이트 경계에서 문자 중간에 끊기면 ICS가 깨짐.
+    const longKoreanMatch: Match = {
+      ...sampleMatch,
+      tournament: {
+        displayName: '리그 오브 레전드 챔피언스 코리아',
+        stage: '플레이오프 라운드 1 매치 1',
+      },
+      bestOf: 5,
+    };
+
+    it('75바이트를 초과하는 SUMMARY는 CRLF + 1칸 들여쓰기로 폴딩된다', () => {
+      const ics = generateIcs([longKoreanMatch], { calendarName: 'T1', now: FIXED_NOW });
+      // 폴딩 표식: SUMMARY 라인 뒤 CRLF + 공백 1칸 + 연속 텍스트
+      expect(ics).toMatch(/SUMMARY:[^\r\n]+\r\n [^\r\n]/);
+    });
+
+    it('폴딩 후에도 모든 라인이 75바이트 이하다', () => {
+      const ics = generateIcs([longKoreanMatch], { calendarName: 'T1', now: FIXED_NOW });
+      const encoder = new TextEncoder();
+      for (const line of ics.split('\r\n')) {
+        expect(encoder.encode(line).length).toBeLessThanOrEqual(75);
+      }
+    });
+
+    it('폴딩 시 한국어 멀티바이트 문자를 깨뜨리지 않는다', () => {
+      const ics = generateIcs([longKoreanMatch], { calendarName: 'T1', now: FIXED_NOW });
+      // 유효하지 않은 UTF-8 시퀀스가 만들어졌다면 디코딩 시 U+FFFD가 등장함
+      expect(ics).not.toContain('�');
+      // 언폴딩(CRLF+공백 제거) 후 원본 SUMMARY가 그대로 복원되어야 함
+      const unfolded = ics.replace(/\r\n /g, '');
+      expect(unfolded).toContain(
+        'SUMMARY:T1 vs 젠지 — 리그 오브 레전드 챔피언스 코리아 플레이오프 라운드 1 매치 1 (Bo5)',
+      );
+    });
+
+    it('75바이트 이하 라인은 폴딩하지 않는다', () => {
+      // sampleMatch의 SUMMARY는 짧은 한국어 → 폴딩 발생 X
+      const ics = generateIcs([sampleMatch], { calendarName: 'T1', now: FIXED_NOW });
+      // 짧은 SUMMARY 라인 뒤에는 곧장 DESCRIPTION이 와야 함 (연속 들여쓰기 없음)
+      expect(ics).toMatch(/SUMMARY:T1 vs 젠지 — LCK 2주 차 \(Bo3\)\r\nDESCRIPTION:/);
+    });
+  });
 });

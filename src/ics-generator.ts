@@ -214,13 +214,17 @@ function escapeText(text: string): string {
 /**
  * RFC 5545 라인 폴딩.
  *
- * 라인이 75바이트(octet) 초과 시 75바이트마다 줄바꿈 + 1칸 들여쓰기.
+ * 라인이 75바이트(octet) 초과 시 줄바꿈 + 1칸 들여쓰기로 continuation.
  * 한국어 글자가 UTF-8에서 3바이트인 점을 고려해 문자 단위로 안전하게 누적.
+ *
+ * ⚠️ 첫 청크는 75바이트까지 허용되지만, continuation 청크는 앞에 공백 1칸이
+ * 붙어 물리 라인이 되므로 74바이트로 캡. 그래야 물리 라인 자체가 75바이트 이하.
  */
 function foldLine(line: string): string {
-  const MAX_BYTES = 75;
+  const FIRST_MAX_BYTES = 75;
+  const CONT_MAX_BYTES = 74; // ' ' (1 byte) + chunk ≤ 75
   const encoder = new TextEncoder();
-  if (encoder.encode(line).length <= MAX_BYTES) return line;
+  if (encoder.encode(line).length <= FIRST_MAX_BYTES) return line;
 
   const chunks: string[] = [];
   let current = '';
@@ -228,7 +232,8 @@ function foldLine(line: string): string {
 
   for (const char of line) {
     const charBytes = encoder.encode(char).length;
-    if (currentBytes + charBytes > MAX_BYTES) {
+    const limit = chunks.length === 0 ? FIRST_MAX_BYTES : CONT_MAX_BYTES;
+    if (currentBytes + charBytes > limit) {
       chunks.push(current);
       current = char;
       currentBytes = charBytes;
