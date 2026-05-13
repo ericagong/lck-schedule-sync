@@ -227,11 +227,11 @@ END:VEVENT
 
 ### 5.2 Phase 3 (완료, 2026-05-13) — 네이버 esports primary + lolesports fallback
 
-**전환 후 데이터 흐름**: primary는 네이버 (LCK·MSI·Worlds·FST·EWC·KeSPA 6 대회 통합 fetch — 6 league × 14 month = 84 호출/회 × 250ms throttle ≈ 21초). 네이버 실패 시 `data-source.ts:fetchWithFallback`이 try-catch로 격리해 `lolesports.ts` fallback 호출 (LCK·MSI·Worlds·FST만 — 신규 대회는 빈 결과로 자연 흐름). 아시안 게임은 4년 주기·데이터 부재로 자동화 범위 외 (3차 결정).
+**전환 후 데이터 흐름**: primary는 네이버 (LCK·MSI·Worlds·FST·EWC·KeSPA 6 대회 통합 fetch — 6 league × 5 month = 30 호출/회 × 250ms throttle ≈ 8초). 네이버 실패 시 `data-source.ts:fetchWithFallback`이 try-catch로 격리해 `lolesports.ts` fallback 호출 (LCK·MSI·Worlds·FST만 — 신규 대회는 빈 결과로 자연 흐름). 아시안 게임은 4년 주기·데이터 부재로 자동화 범위 외 (3차 결정).
 
 | 단계         | 실제 변경                                                                                                     |
 | ------------ | ------------------------------------------------------------------------------------------------------------- |
-| ① fetch      | `src/naver.ts:fetchAllNaverMatches` 신설 (primary, 12 과거 + 1 미래 월 rolling)                               |
+| ① fetch      | `src/naver.ts:fetchAllNaverMatches` 신설 (primary, 3 과거 + 현재 + 1 미래 월 rolling = 5 month)               |
 | ① parse      | `src/naver.ts:parseNaverResponse` + `toMatch` (UID 접두 `naver:` · `name` 한국어 그대로)                      |
 | ① 합성       | `src/data-source.ts:fetchWithFallback` 신설 — primary throw 시 fallback 자동 호출, `{matches, source}` 반환   |
 | `lolesports` | Phase 2 코드 그대로 보존 (`fetchAllMatches`) — fallback 역할로 강등 (sunk cost 회피)                          |
@@ -242,7 +242,7 @@ END:VEVENT
 
 → **본질**: 새 파일 2개 (`naver.ts`, `data-source.ts`) + `main.ts` 갱신 + 워크플로 step 2개. `Match` 도메인이 변경 차단막이라 ②~⑥은 한 줄도 안 건드림. ARCHITECTURE.md §5 예측 그대로.
 
-→ **운영 lifecycle**: ICS는 매번 통째 덮어쓰기 → ICS에 빠진 UID는 캘린더에서 자동 삭제. 우리는 **rolling 12개월 누적식**(과거 12 + 현재 + 미래 1)로 fetch → Worlds 작년 우승 매치 포함, 1년+ 전 매치는 자동 정리. 자세한 정책 흐름은 [CLAUDE.md "Phase 3 lookback window 결정"](./CLAUDE.md).
+→ **운영 lifecycle**: ICS는 매번 통째 덮어쓰기 → ICS에 빠진 UID는 캘린더에서 자동 삭제. 우리는 **5개월 rolling**(과거 3 + 현재 + 미래 1)로 fetch → T1 ~25 매치만 캘린더 유지, 4개월+ 전은 자동 정리. **캘린더 본질 = 다가오는 일정**에 집중 (추억 보존은 Phase 4 검토). 결정 진화는 [CLAUDE.md "Phase 3 lookback window 결정"](./CLAUDE.md) 5차 단계 참조.
 
 → **Phase 2 lolesports 코드 폐기 X**: 안정성 검증된 fetcher를 fallback으로 재활용 → sunk cost 회피 + 비공식 API 단독 의존 위험 흡수. fallback 발동은 Issue로 운영자 통보.
 

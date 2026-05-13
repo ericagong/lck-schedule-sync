@@ -247,13 +247,13 @@ describe('enumerateMonths — UTC 기준 결정성 (누적식 정책)', () => {
     expect(enumerateMonths(new Date(Date.UTC(2026, 4, 13)), 0, 1)).toEqual(['2026-05']);
   });
 
-  it('과거 12 + 현재 + 미래 1 = 14개월 (Phase 3 기본, 실측 lead time)', () => {
-    const out = enumerateMonths(new Date(Date.UTC(2026, 4, 13)), 12, 2);
-    expect(out).toHaveLength(14);
-    expect(out[0]).toBe('2025-05'); // 12개월 전 (Worlds 2025 직전, MSI 2025 등)
-    expect(out[11]).toBe('2026-04'); // 1개월 전
-    expect(out[12]).toBe('2026-05'); // 현재
-    expect(out[13]).toBe('2026-06'); // +1 (네이버 lead time 매칭)
+  it('과거 3 + 현재 + 미래 1 = 5개월 (Phase 3 기본, 5차 결정 — 캘린더 본질 다가오는 일정)', () => {
+    const out = enumerateMonths(new Date(Date.UTC(2026, 4, 13)), 3, 2);
+    expect(out).toHaveLength(5);
+    expect(out[0]).toBe('2026-02'); // 3개월 전 (직전 split 끝물)
+    expect(out[2]).toBe('2026-04'); // 1개월 전
+    expect(out[3]).toBe('2026-05'); // 현재
+    expect(out[4]).toBe('2026-06'); // +1 (네이버 lead time 매칭)
   });
 
   it('과거 방향 해 넘어감 (2026-02에서 4개월 뒤로)', () => {

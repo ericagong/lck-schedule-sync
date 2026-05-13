@@ -48,18 +48,18 @@ export const NAVER_LEAGUE_DISPLAY_NAMES: Record<string, string> = {
 /**
  * fetch 대상 월 범위 — 과거 N개월 + 현재월 + M 미래 월.
  *
- * 정책:
- * - 누적식 (12개월 rolling): ICS는 매번 통째로 덮어쓰기 → 과거 UID 빠지면 캘린더에서
- *   자동 삭제. 12개월 = 최근 Worlds 1년치 + LCK 작년 split들 보존 (검색·list view 부담 최소).
- * - 미래는 실측 lead time만큼만: 네이버는 ~1개월 미리 등록 (현재월+1만 데이터 있음).
- *   6개월 미래를 fetch해봐야 month=current+5는 빈 응답 → API 호출만 낭비. 매일 2회 cron이
- *   새 매치 등록 시점에 자동 흡수하므로 buffer 작아도 OK.
+ * 정책 (5차 결정 — 3 + 2 = 5 month rolling):
+ * - 캘린더 본질은 "다가오는 일정 관리". 80 매치(12+2)는 list view·검색 노이즈가 큼.
+ * - 직전 LCK split (3개월) 추억 + 현재 진행 split + 다음 lead time 1개월 = T1 ~25 매치
+ *   → 캘린더 부담 거의 0, "다가오는 매치" 본질에 집중.
+ * - 과거 큰 대회 추억(Worlds 우승 등) 보존은 캘린더 본질 외 — Phase 4에서 "응원팀별
+ *   추억 캘린더" 별도 발행 검토. 일단 단일 t1.ics는 가볍게.
  *
- * 과거 12 + 현재 1 + 미래 1 = 14 month × 6 league = 84 호출/회 × 250ms ≈ 21초.
+ * 과거 3 + 현재 1 + 미래 1 = 5 month × 6 league = 30 호출/회 × 250ms ≈ 8초.
  *
- * 자세한 trade-off·결정 흐름은 CLAUDE.md "Phase 3 lookback window 결정" 참조.
+ * 자세한 trade-off·결정 진화는 CLAUDE.md "Phase 3 lookback window 결정" 참조.
  */
-const MONTHS_BEFORE = 12;
+const MONTHS_BEFORE = 3;
 const MONTHS_AHEAD = 2;
 
 /**
@@ -97,7 +97,7 @@ export async function fetchNaverScheduleMonth(
 }
 
 /**
- * 6 대회 × (현재월-12 ~ 현재월+1) = 14개월 순차 fetch → 단일 Match[].
+ * 6 대회 × (현재월-3 ~ 현재월+1) = 5개월 순차 fetch → 단일 Match[].
  *
  * 순차 호출(병렬 X) + 250ms throttle: CLAUDE.md 모범사례. 네이버 burst rate
  * limit 회피(실측 429), 부담 최소. 한 호출 실패 시 throw → 호출부(main.ts)에서
