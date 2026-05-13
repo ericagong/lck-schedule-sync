@@ -114,9 +114,7 @@ export function parseScheduleResponse(response: ScheduleApiResponse): {
     if (match !== null) matches.push(match);
   }
 
-  // 페이지네이션: older 토큰이 있으면 더 옛날 페이지가 있다는 뜻
-  // newer 토큰이 있으면 더 최근 페이지가 있다는 뜻
-  // 우선 newer 방향으로 순회 (현재→미래)
+  // 페이지네이션: newer 방향(현재→미래)만 사용. 과거 매치는 캘린더 관점에서 불필요.
   const newerToken = response.data.schedule.pages?.newer;
   const nextPageToken = newerToken ?? undefined;
 

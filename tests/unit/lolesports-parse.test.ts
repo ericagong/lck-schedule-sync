@@ -52,4 +52,50 @@ describe('parseScheduleResponse', () => {
     const { matches } = parseScheduleResponse(fixture);
     expect(matches[0]?.tournament.displayName).toBe('LCK');
   });
+
+  it('Bo1/Bo3/Bo5가 아닌 매치는 silent drop 한다 (Bo2/Bo7 회귀)', () => {
+    // lolesports 실측상 Bo1/3/5만 관찰되지만 — 정책 회귀 방지용
+    const response = {
+      data: {
+        schedule: {
+          pages: { older: null, newer: null },
+          events: [
+            {
+              startTime: '2026-10-01T10:00:00Z',
+              state: 'unstarted',
+              type: 'match',
+              blockName: '결승',
+              league: { name: '월드 챔피언십', slug: 'worlds' },
+              match: {
+                id: 'bo7-fake-final',
+                teams: [
+                  { name: 'T1', code: 'T1' },
+                  { name: 'Gen.G Esports', code: 'GEN' },
+                ],
+                strategy: { type: 'bestOf', count: 7 },
+              },
+            },
+            {
+              startTime: '2026-04-01T10:00:00Z',
+              state: 'unstarted',
+              type: 'match',
+              blockName: '쇼매치',
+              league: { name: 'LCK', slug: 'lck' },
+              match: {
+                id: 'bo2-fake-show',
+                teams: [
+                  { name: 'T1', code: 'T1' },
+                  { name: 'KT Rolster', code: 'KT' },
+                ],
+                strategy: { type: 'bestOf', count: 2 },
+              },
+            },
+          ],
+        },
+      },
+    } as Parameters<typeof parseScheduleResponse>[0];
+
+    const { matches } = parseScheduleResponse(response);
+    expect(matches).toHaveLength(0);
+  });
 });
