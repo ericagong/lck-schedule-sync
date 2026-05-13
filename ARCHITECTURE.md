@@ -28,7 +28,9 @@ flowchart TD
 
 회색 = 외부 시스템 / 보라 = 우리 인프라 / 흰색 = 파이프라인 / 청록 = 산출물·소비.
 
-**트래픽 분리**: 사용자 1명이든 10000명이든 외부 API 호출은 매일 2회 고정 (사용자는 GitHub Pages에서 `.ics`만 받기 때문). 비영리 공개 가능한 구조 — 단계적 공개 전략·모범사례 8항목은 [CLAUDE.md "Phase 2 데이터 소스 결정"](./CLAUDE.md) 참조.
+**트래픽 분리**: 사용자 1명이든 10000명이든 외부 API 호출은 매일 2회 고정 (사용자는 GitHub Pages에서 `.ics`만 받기 때문). 비영리 공개 가능한 구조 — 단계적 공개 전략·모범사례 8항목은 [CLAUDE.md "Phase 3 데이터 소스 전환 결정"](./CLAUDE.md) 참조.
+
+**데이터 소스 전략 (Phase 3 진입 후)**: 네이버 단일 primary + lolesports fallback. 네이버가 한국어 자연 풍부 + 신규 대회(KeSPA·EWC·AG) 커버, lolesports는 Phase 2 검증 완료 코드를 fallback으로 재활용(sunk cost 회피). 비공식 API 단독 의존 위험을 fallback이 흡수. 5가지 근거 자세히는 CLAUDE.md.
 
 ---
 
@@ -170,6 +172,20 @@ URL:https://lolesports.com/
 END:VEVENT
 ```
 
+### 4.4 iCalendar 구독 동기화 메커니즘
+
+사용자가 `.ics` URL을 구독하면 캘린더 앱이 주기적으로 fetch해 자동 갱신. 핵심 매커니즘:
+
+| 항목                  | 동작                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Pull 모델**         | 캘린더 앱이 일정 주기로 `t1.ics` URL을 HTTP GET. push 없음                                                         |
+| **UID 멱등성**        | lolesports `match.id` 또는 네이버 `gameId`를 ICS UID로 보존. 같은 UID = 같은 이벤트 → in-place 갱신 (중복 안 생성) |
+| **HTTP 304 캐싱**     | GitHub Pages가 자동 처리. 변경 없으면 304 응답 → 캘린더 앱 트래픽 절약                                             |
+| **fetch 주기 (앱별)** | Google Calendar: 12~24h (조정 불가) / Apple Calendar: 매시간 기본, 5분~1주 선택 가능 / Outlook: 사용자 설정        |
+| **end-to-end lag**    | cron 12h (매일 2회 발행) + 캘린더 fetch 주기 평균 6h ≈ **평균 18시간**, 최대 36시간 (Google이 24h일 때)            |
+
+⚠️ **Import vs Subscribe**: 사용자가 "import / 가져오기"로 추가하면 일회성 사본만 들어가 **UID 보존도 안 되고**(캘린더 앱이 자체 UUID 재발급) **자동 갱신도 안 됨**. 반드시 **URL 구독**을 사용해야 함 — README의 캘린더 앱별 절차 가이드 참조.
+
 ---
 
 ## 5. Phase 변경 면적 예측
@@ -190,12 +206,19 @@ END:VEVENT
 
 > **실측 (2026-05-13)**: 예측 그대로. `main.ts`만 3줄 추가 변경. T1 출전 48 매치(LCK 16·MSI 16·Worlds 16·First Stand 0) 정상 발행. 자세한 회고는 [CLAUDE.md "Phase 2 완료"](./CLAUDE.md).
 
-### 5.2 Phase 3 (다음) — 네이버 esports JSON API 추가 (EWC · KeSPA Cup · 아시안 게임)
+### 5.2 Phase 3 (다음) — 네이버 esports JSON API 단일 전환 + lolesports를 fallback으로 강등
 
-| 단계    | 변경?    | 내용                                                               |
-| ------- | -------- | ------------------------------------------------------------------ |
-| ① fetch | **변경** | `naver-esports.ts:fetchNaverSchedule()` 신설                       |
-| ② parse | **변경** | `naver-esports.ts:toMatchFromNaver()` 신설 — 네이버 응답 → `Match` |
-| ③~⑦     | ❌ 없음  | 도메인이 `Match`로 통일됐기 때문                                   |
+**전환 후 데이터 흐름**: primary는 네이버 (LCK·MSI·Worlds·FST·EWC·KeSPA·AG 통합 fetch). 네이버 실패 시 `pipeline.ts`가 try-catch로 격리해 `lolesports.ts` fallback 호출 (LCK·MSI·Worlds·FST만 — 신규 대회는 빈 결과로 자연 흐름).
 
-→ **본질: ①·② 두 함수 추가**. UID 충돌 회피 위해 네이버 매치는 `naver:<gameId>@lck-schedule-sync` 접두 권장 (구현 시점에 확정).
+| 단계         | 변경?    | 내용                                                                               |
+| ------------ | -------- | ---------------------------------------------------------------------------------- |
+| ① fetch      | **변경** | `src/naver.ts:fetchAllMatchesFromNaver()` 신설 — primary                           |
+| ② parse      | **변경** | `src/naver.ts:toMatchFromNaver()` 신설 — 네이버 응답 → `Match` (UID 접두 `naver:`) |
+| pipeline     | **변경** | `pipeline.ts`에 try-catch fallback 로직 — 네이버 fail → lolesports로 자동 전환     |
+| `lolesports` | **유지** | Phase 2 코드 그대로 보존, fallback 역할로 강등 (sunk cost 회피)                    |
+| 에러 알림    | **신설** | GitHub Actions에서 fallback 발동 시 Issue 자동 생성 (운영 가시성)                  |
+| ③~⑦          | ❌ 없음  | 도메인이 `Match`로 통일 — pipeline 이후 단계 0줄                                   |
+
+→ **본질**: 새 파일 1개(`naver.ts`) + `pipeline.ts` fallback 로직 + GitHub Actions Issue 알림. `Match` 도메인이 변경 차단막이라 ③~⑦은 한 줄도 안 건드림.
+
+→ **Phase 2 lolesports 코드 폐기 X**: 안정성 검증된 fetcher를 fallback으로 재활용 → sunk cost 회피 + 비공식 API 단독 의존 위험 흡수. 자세한 결정 흐름·근거는 [CLAUDE.md "Phase 3 데이터 소스 전환 결정"](./CLAUDE.md).

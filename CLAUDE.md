@@ -55,8 +55,10 @@ src/
 Phase 0 (완료): LCK 정규시즌 + T1 → t1.ics
 Phase 1 (완료): + LCK 플옵·결승·플레이-인 (blockName 기반 stage SUMMARY 표시, TBD 제외 유지)
 Phase 2 (완료): + MSI + Worlds + First Stand (lolesports API, T1 출전분만 t1.ics 통합)
-Phase 3 (다음): + 네이버 esports JSON API 자동화 (EWC + KeSPA Cup + 아시안 게임) — T1 출전 확정 시 반응형
-                ↑ 2026-05-13 결정 변경 (이전: 수동 입력). 상세는 "Phase 2 데이터 소스 결정" 섹션 참조.
+Phase 3 (다음): 네이버 esports JSON API로 데이터 소스 단일 전환 + lolesports를 fallback으로 강등.
+                + 신규 대회 통합: EWC + KeSPA Cup + 아시안 게임 (T1 출전 확정 시 자연 표시)
+                ↑ 2026-05-13 2차 결정 (1차: 수동→네이버 마이너 대회만 추가). 흐름·근거는
+                  "Phase 3 데이터 소스 전환 결정" 섹션 참조.
 Phase 4:        + 응원팀 다중 발행 (geng.ics, dk.ics 등 각 팀별 단일 ICS)
 Phase 5 (선택): 운영 강화
 ```
@@ -64,11 +66,13 @@ Phase 5 (선택): 운영 강화
 ## 핵심 의사결정 요약
 
 - **메커니즘**: ICS 구독 피드 (Pull, 무인증) — Google API 직접 삽입 X
-- **데이터 소스**: lolesports 비공식 API (LCK·MSI·Worlds·First Stand) + 네이버 esports JSON API (EWC·KeSPA Cup·아시안 게임, Phase 3)
-- **EWC·KeSPA Cup·아시안 게임**: lolesports 미커버 → Phase 3에서 **네이버 esports JSON API 자동화** (2026-05-13 결정, T1 출전 확정 시 반응형 발행)
+- **데이터 소스 (Phase 3 진입 후)**: 네이버 esports JSON API 단일 primary (LCK·MSI·Worlds·FST·EWC·KeSPA·아시안 게임 통합) + lolesports를 fallback으로 강등 (네이버 실패 시에만 사용, sunk cost 회피)
+- **데이터 소스 (Phase 0~2)**: lolesports 비공식 API 단독 (LCK·MSI·Worlds·First Stand). 네이버 미사용
+- **EWC·KeSPA·아시안 게임**: lolesports 미커버 → Phase 3에서 네이버 통합 (2026-05-13 2차 결정, T1 출전 확정 시 자연 표시)
 - **스케줄링**: GitHub Actions cron 매일 2회 (04:00, 23:00 KST)
-- **개인화**: 캘린더 앱에 위임 (VALARM 미포함)
-- **단일 t1.ics 통합 방향 (Phase 2~3)**: 모든 대회를 단일 `.ics`로 merge (사용자 인지 부담 0). Phase 4에서 다른 응원팀(geng.ics 등) 확장.
+- **개인화**: 캘린더 앱에 위임 (VALARM 미포함, 사용자가 캘린더 앱에서 직접 알림 설정)
+- **사용자 수 카운팅 미실시**: 프라이버시 존중 + 인프라 단순. ICS URL 구독은 HTTP pull이라 본질적으로 정확 카운팅 X. 사용자 호응은 GitHub Star·Issue·PR로 측정.
+- **단일 t1.ics 통합 방향**: 모든 대회를 단일 `.ics`로 merge (사용자 인지 부담 0). Phase 4에서 다른 응원팀(geng.ics 등) 확장.
 
 ## 환경 정보
 
@@ -124,7 +128,7 @@ pnpm typecheck
 
 ### 다음 단계 (Phase 3 진입 시)
 
-`naver-esports.ts` 신규 fetcher + `toMatchFromNaver()` parser 추가. 도메인이 `Match`로 통일됐기 때문에 ③~⑦ 변경 0줄. UID 충돌 회피 위해 네이버 매치는 `naver:<gameId>@lck-schedule-sync` 접두 권장. 자세한 사전 결정·후보 비교·모범사례 8항목은 "Phase 2 데이터 소스 결정" 섹션 참조.
+`naver.ts` 신규 fetcher + parser로 모든 대회(LCK·MSI·Worlds·FST·EWC·KeSPA·AG)를 네이버에서 fetch (primary). Phase 2 `lolesports.ts` 코드는 폐기하지 않고 **fallback 역할로 강등** — `pipeline.ts`에 try-catch 격리. 도메인이 `Match`로 통일됐기 때문에 ③~⑦ 변경 0줄. UID 충돌 회피 위해 네이버 매치는 `naver:<gameId>@lck-schedule-sync` 접두. fallback 발동 시 GitHub Actions Issue 자동 생성으로 운영 가시성 확보. 자세한 결정 흐름·근거·모범사례는 "Phase 3 데이터 소스 전환 결정" 섹션 참조.
 
 ## lolesports API 참조 (2026-05-12 분석)
 
@@ -153,13 +157,28 @@ LCK ~3주, MSI ~2개월. 매일 2회 cron(04:00·23:00 KST)으로 모든 대회 
 
 raw `blockName`을 `tournament.stage`로 그대로 흘려 SUMMARY에 표시(정규화 X). lolesports가 라운드 디테일(R1/R2 등)을 API에 제공하지 않아 우리도 그 한계 안에서 작동.
 
-## Phase 2 데이터 소스 결정 (2026-05-13)
+## Phase 3 데이터 소스 전환 결정 (2026-05-13)
 
-**EWC·KeSPA Cup·아시안 게임 = 네이버 esports JSON API 자동화** (이전 결정 "수동 입력" 뒤집기). 실행은 Phase 3.
+**최종 결정 (2차)**: 네이버 esports JSON API 단일 primary + lolesports를 fallback으로 강등.
 
-### 발견
+### 결정 흐름 (1차 → 2차, 같은 날)
 
-EWC·KeSPA Cup이 싱글/더블 엘리미네이션 토너먼트 → 매 경기 후 다음 대진 동적 결정. 수동 입력 비용 가정(1.5h/년)이 실제 3-5h + 매 경기 후 입력 압박. **자동화 가치 5-10배 ↑**.
+| 차수    | 결정                                                                                                                               | 한계                                                   |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| 1차     | EWC·KeSPA·아시안 게임만 네이버로 추가 (lolesports는 LCK/MSI/Worlds/FST primary 유지) — 수동 입력 폐기                              | 데이터 source 2개 병행 → 갈래 분기 코드, fallback 부재 |
+| **2차** | **네이버 단일 primary로 전환** (LCK·MSI·Worlds·FST·EWC·KeSPA·아시안 모두 네이버) **+ Phase 2 lolesports 코드를 fallback으로 강등** | 비공식 API 단독 의존 → fallback이 위험 흡수            |
+
+### 2차 전환 근거 (5가지)
+
+1. **한국어 자연 풍부**: 네이버 응답이 처음부터 한국어 (`league.name`, `homeTeam.name` 등) — lolesports의 `hl=ko-KR` + `team-names.ts` 매핑 우회 가능
+2. **신규 대회 자연 통합**: KeSPA·EWC·아시안 게임이 lolesports 미커버라 어차피 네이버 도입 필요 → 한 번에 단일화
+3. **`topLeagueId=lck` 검증 완료**: 네이버가 LCK 데이터 제공 확인 (2026-05-13, 5월 50+ 매치 응답)
+4. **fallback 안전망**: lolesports는 Phase 2까지 안정 검증됨 → 네이버 실패 시 무료 안전망 (try-catch 격리)
+5. **Phase 2 sunk cost 회피**: 기존 lolesports 코드를 폐기하지 않고 fallback 역할로 재활용
+
+### 발견 (1차 결정 시 동기)
+
+EWC·KeSPA Cup이 싱글/더블 엘리미네이션 토너먼트 → 매 경기 후 다음 대진 동적 결정. 수동 입력 비용 가정(1.5h/년)이 실제 3-5h + 매 경기 후 입력 압박. **자동화 가치 5-10배 ↑**. 이후 정찰 과정에서 네이버가 LCK까지 커버한다는 사실 발견 → 2차 결정으로 단일 전환.
 
 ### 후보 비교 (모두 탈락 → 네이버 채택)
 
@@ -179,7 +198,12 @@ GET https://esports-api.game.naver.com/service/v2/schedule/month
   ?month=YYYY-MM&topLeagueId=<league>&relay=false
 ```
 
-검증된 `topLeagueId`: `lol_kespa` (KeSPA Cup 2025 39경기), `ewc_lol` (EWC 2025 7월 18경기).
+검증된 `topLeagueId`:
+
+- `lck` — LCK (2026-05-13 2차 결정 시 검증, 5월 50+ 매치 응답) ← 2차 단일 전환의 핵심 검증
+- `lol_kespa` — KeSPA Cup 2025 39경기 (1차 결정 시 검증)
+- `ewc_lol` — EWC 2025 7월 18경기 (1차 결정 시 검증)
+- MSI · Worlds · First Stand · 아시안 게임 — 미검증 (Phase 3 진입 시 1차 정찰)
 
 응답은 lolesports DTO와 1:1 매핑 가능 — `gameId` → UID(접두 `naver:` 권장으로 충돌 회피), `startDate`(epoch ms KST) → DTSTART, `title`(한글) → stage, `homeTeam`/`awayTeam.{name, nameEng, nameEngAcronym}` → 팀.
 
@@ -189,7 +213,9 @@ GET https://esports-api.game.naver.com/service/v2/schedule/month
 
 ### Phase 3 구현 시 갖출 모범사례 (8항목)
 
-기본 6: ① User-Agent 명확히 (`lck-schedule-sync/X.X (github URL; 연락처)`) ② 매일 2회 cron 유지 ③ GitHub Actions 24h 캐싱 ④ 403/429 즉시 중단 + 마지막 성공 응답 fallback ⑤ README에 비공식 API 사용 명시 ⑥ 데이터 출처(네이버 esports) 링크 제공. 비영리 공개 추가 2: ⑦ MIT 라이센스 (README에 이미 있음) ⑧ Takedown 채널 명시 (GitHub issue + 군주 이메일, 네이버 요청 시 즉시 중단 의사, SLA 24h).
+기본 6: ① User-Agent 명확히 (`lck-schedule-sync/X.X (github URL; 연락처)`) ② 매일 2회 cron 유지 ③ GitHub Actions 24h 캐싱 ④ **403/429 시 네이버 fail → `lolesports.ts` fallback 자동 전환** (Phase 2 코드 try-catch로 격리) + 마지막 성공 응답 fallback ⑤ README에 비공식 API 사용 명시 ⑥ 데이터 출처(네이버 esports) 링크 제공. 비영리 공개 추가 2: ⑦ MIT 라이센스 (README에 이미 있음) ⑧ Takedown 채널 명시 (GitHub issue + 군주 이메일, 네이버 요청 시 즉시 중단 의사, SLA 24h).
+
+(2차 결정 후 추가) ④에 **lolesports fallback** 명시 — Phase 2 코드를 폐기하지 않고 fallback 역할로 재활용 (sunk cost 회피). 운영 가시성을 위해 fallback 발동 시 GitHub Actions가 Issue 자동 생성.
 
 ### 단계적 공개 전략
 
@@ -197,10 +223,12 @@ A. Phase 3 구현 후 1-2주 본인 검증 → B. 1-2개월 후 가까운 T1 팬
 
 ### 미검증 항목 (Phase 3 진입 시 1차 검증)
 
-- 아시안 게임 `topLeagueId` 후보 (`lol_asian_games` 등)
+- MSI · Worlds · First Stand · 아시안 게임 `topLeagueId` 후보 (`lol_msi`, `lol_worlds`, `lol_first_stand`, `lol_asian_games` 등) — 1차 단일 전환 직전에 모두 정찰
 - 미래 월 조회 동작 (미공개 시점 호출 시 빈 응답인지 에러인지)
-- LCK 정규시즌 lolesports vs 네이버 lag 비교 (LCK는 lolesports 유지 권장)
+- 응답 DTO 안정성 — lolesports처럼 시즌·대회 무관 동일 형태인지 (parser 분기 필요성 판단)
+- 네이버 LCK 응답의 안정성·정확도 — lolesports vs 네이버 lag 실측 (단일 전환 가능 확정)
 - rate limit · IP 차단 · GitHub Actions runner IP에서 네이버 접근 가능 여부
+- fallback 트리거 임계점 — 403/429/네트워크 timeout 어느 시점부터 lolesports로 전환할지
 
 ## 참고 문서
 
