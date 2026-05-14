@@ -1,37 +1,20 @@
 /**
- * Phase 3 시각 검증용 ICS 빌드 (네이버 데이터 소스).
- *
- * 목적: 캡처된 raw fixture(fixtures/phase-3/*)를 그대로 production parser +
- * ics-generator에 통과시켜 팀 필터 없는 ICS를 생성. 6 league 모든 매치가
- * 한 캘린더 안에 들어가므로 SUMMARY·시간·stage·한국어 팀명 시각 검증 가능.
- *
- * 특이점:
- * - 데이터 소스: 네이버 esports JSON (fixtures/phase-3/*.json)
- * - UID: 네이버 매치는 `naver:` 접두 (소스 namespace)
- * - displayName 주입: topLeagueId → 한국어 매핑 (응답에 inline 없음)
+ * Phase 3 시각 검증 — fixtures/phase-3/* → 무필터 ICS (6 대회 전체).
  *
  * 사용:
  *   pnpm exec tsx scripts/verify-phase-3.ts
- *   open public/phase-3-verify.ics    # macOS — 새 캘린더로 구독·import
- *
- * 산출물은 .gitignore의 `public/*.ics`에 매치되어 트래킹 안 됨.
+ *   open public/phase-3-verify.ics
  */
 
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { Match } from '../src/types.js';
-import { generateIcs } from '../src/ics-generator.js';
-import {
-  NAVER_LEAGUE_DISPLAY_NAMES,
-  parseNaverResponse,
-  type NaverScheduleResponse,
-} from '../src/naver.js';
+import { LEAGUES, Match } from '../src/match.js';
+import { generateIcs } from '../src/ics.js';
+import type { NaverScheduleResponse } from '../src/naver.js';
 
 const FIXTURE_DIR = resolve('fixtures/phase-3');
 const OUTPUT = 'public/phase-3-verify.ics';
 
-// fixtures/phase-3/<topLeagueId>-<YYYY-MM>.json 형식의 파일 자동 탐지.
-// invalid ID baseline 캡처 (lol_msi-*)도 포함되지만 displayName 'Unknown' 부여.
 const files = readdirSync(FIXTURE_DIR)
   .filter((f) => f.endsWith('.json'))
   .sort();
@@ -40,24 +23,20 @@ const all: Match[] = [];
 const perFile: Array<{ file: string; topLeagueId: string; count: number }> = [];
 
 for (const file of files) {
-  // 파일명에서 topLeagueId 추출: "<topLeagueId>-YYYY-MM.json"
-  // topLeagueId 자체에 하이픈은 없으므로 마지막 "-YYYY-MM" 부분만 분리.
   const m = file.match(/^(.+)-\d{4}-\d{2}\.json$/);
   if (!m) continue;
   const topLeagueId = m[1] ?? 'unknown';
-  const displayName = NAVER_LEAGUE_DISPLAY_NAMES[topLeagueId] ?? 'Unknown';
 
   const json = JSON.parse(
     readFileSync(resolve(FIXTURE_DIR, file), 'utf-8'),
   ) as NaverScheduleResponse;
-  const { matches } = parseNaverResponse(json, displayName);
+  const items = json.content?.matches ?? [];
+  const matches = Match.fromList([...items]);
   all.push(...matches);
   perFile.push({ file, topLeagueId, count: matches.length });
 }
 
-// 무필터 시각 검증 스크립트 — production 추상화(selectActiveTeamMatches) 비의존.
-// 팀 필터 없이 6 대회 raw 캡처 그대로. 정렬은 generateIcs가 책임.
-const active = all.filter((m) => m.status !== 'canceled');
+const active = all.filter((m) => m.isActive);
 
 const ics = generateIcs(active, {
   calendarName: 'Phase 3 검증 — Naver 6 대회 전체 (무필터)',
@@ -68,9 +47,8 @@ console.log(`✓ ${active.length} matches → ${OUTPUT}\n`);
 
 console.log('--- 파일별 캡처 분포 ---');
 for (const r of perFile) {
-  console.log(
-    `  ${r.count.toString().padStart(3)} ${r.file}  (display=${NAVER_LEAGUE_DISPLAY_NAMES[r.topLeagueId] ?? 'Unknown'})`,
-  );
+  const display = LEAGUES[r.topLeagueId as keyof typeof LEAGUES] ?? 'Unknown';
+  console.log(`  ${r.count.toString().padStart(3)} ${r.file}  (display=${display})`);
 }
 
 const counts = new Map<string, number>();
@@ -82,7 +60,7 @@ for (const m of active) {
   stages.get(league)?.add(m.tournament.stage);
 }
 
-console.log('\n--- 대회별 분포 (parseNaverResponse 후) ---');
+console.log('\n--- 대회별 분포 ---');
 for (const [league, n] of [...counts.entries()].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${n.toString().padStart(3)} ${league}`);
   console.log(`        stages: ${[...(stages.get(league) ?? [])].join(' / ')}`);
