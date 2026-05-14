@@ -124,10 +124,7 @@ pnpm typecheck    # 타입 체크만
 ```
 src/
 ├── core/types.ts       # Match, Team 도메인 타입
-├── team-names.ts       # 영문 → 한국어 매핑 (lolesports fallback 시만 사용)
-├── naver.ts            # 네이버 esports JSON API fetcher (primary, 6 대회)
-├── lolesports.ts       # lolesports API fetcher (fallback only)
-├── data-source.ts      # primary/fallback 합성 (try-catch)
+├── naver.ts            # 네이버 esports JSON API fetcher (6 대회)
 ├── filter.ts           # filterByTeam (순수)
 ├── ics-generator.ts    # Match[] → ICS string (순수)
 ├── pipeline.ts         # 함수 합성
@@ -136,9 +133,9 @@ src/
 
 ### 설계 원칙
 
-- **SRP**: side effect는 `naver.ts` · `lolesports.ts` · `main.ts` 세 곳에만
+- **SRP**: side effect는 `naver.ts` · `main.ts` 두 곳에만
 - **순수 함수 우선**: filter, ics-generator, pipeline, parser 모두 테스트 가능
-- **멱등성**: 네이버 `gameId`를 `naver:` 접두로 ICS UID 사용 (lolesports fallback 시 `match.id` 그대로) → 같은 매치는 항상 같은 UID
+- **멱등성**: 네이버 `gameId`를 `naver:` 접두로 ICS UID 사용 → 같은 매치는 항상 같은 UID
 - **개인화는 위임**: VALARM 미포함, 캘린더 앱이 알림 책임
 
 자세한 설계 의사결정·트레이드오프·정찰 결과는 [`CLAUDE.md`](./CLAUDE.md) 참조.
@@ -176,7 +173,7 @@ src/
 
 ## 향후 계획
 
-- **Phase 1~3 (완료)**: LCK · MSI · Worlds · First Stand · EWC · KeSPA Cup 6 대회 — 네이버 esports JSON 단일 primary + lolesports fallback. T1 출전 매치만 단일 `t1.ics` 통합.
+- **Phase 1~3 (완료)**: LCK · MSI · Worlds · First Stand · EWC · KeSPA Cup 6 대회 — 네이버 esports JSON 단일 소스. T1 출전 매치만 단일 `t1.ics` 통합.
 - **Phase 4**: 응원팀별 다중 `.ics` 발행 (geng.ics · dk.ics 등) + 과거 매치 영구 보존 archive ICS 검토
 - 아시안 게임은 4년 주기·데이터 부재로 자동화 범위 외 (다음 AG 시점에 수동 ICS append 또는 별도 메커니즘 고민)
 
@@ -184,14 +181,14 @@ src/
 
 이 프로젝트는 비영리·비상업 팬 프로젝트입니다.
 
-- **Primary**: [네이버 esports](https://game.naver.com/esports) JSON API (비공식, 6 대회 통합)
-- **Fallback**: [lolesports.com](https://lolesports.com/) 비공식 API (네이버 일시 장애 시 자동 전환, 4 대회 — fallback 발동 시 KeSPA·EWC 일시 누락 가능)
+- **데이터 소스**: [네이버 esports](https://game.naver.com/esports) JSON API (비공식, 6 대회 통합)
 - 외부 API 호출은 매일 2회 고정 (사용자 수 무관 — 사용자는 GitHub Pages에서 `.ics`만 받음)
 - User-Agent에 본 레포 URL 포함 (운영자 식별 가능)
+- 네이버 API 일시 장애 시: 워크플로 실패 → ICS 갱신만 lag (GitHub Pages는 마지막 성공본을 계속 서빙하므로 기존 매치는 유지). 다음 cron(최대 12h 후)에서 자동 회복.
 
 ## Takedown · 문의
 
-네이버 또는 lolesports에서 데이터 사용 중단 요청 시 24시간 안에 응답합니다. 운영 채널:
+네이버에서 데이터 사용 중단 요청 시 24시간 안에 응답합니다. 운영 채널:
 
 - **GitHub Issue**: [Issues](https://github.com/ericagong/lck-schedule-sync/issues) (가장 빠름)
 - **이메일**: the.erica.gong@gmail.com

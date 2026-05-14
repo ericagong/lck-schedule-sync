@@ -22,6 +22,8 @@ const USER_AGENT = 'lck-schedule-sync/0.1 (+https://github.com/ericagong/lck-sch
  * 출처: game.naver.com/esports HTML scrape (2026-05-13 Step A 정찰). 추정 X.
  * 아시안 게임(asi_lol)은 4년 주기·데이터 부재로 자동화 범위 외 — 추후 별도 처리.
  */
+// TODO: 우선 모두 추가해놓고, 필요없는 것은 제거하기.
+// TODO: 그리고 에러를 좀 더 세분화해서 어느 단계에서 에러가 발생하는지 명확히 로그를 찍어야겠다.
 export const NAVER_LEAGUE_IDS = {
   LCK: 'lck',
   MSI: 'msi',
@@ -35,8 +37,9 @@ export const NAVER_LEAGUE_IDS = {
  * topLeagueId → ICS SUMMARY 표시명.
  *
  * 네이버 응답에 inline displayName 필드 없음 → parser 호출부에서 주입.
- * Phase 2 lolesports의 league.name과 일관된 한국어 표시.
+ * (응답에는 topLeagueId만 있고 사람이 읽을 league.name 필드는 없음)
  */
+// TODO: 대체 이 용도가 뭔지 모르겠어. 이거 안쓰고 네이버 응답에 있는 데이터를 그대로 쓰면 되는거 아닌가?
 export const NAVER_LEAGUE_DISPLAY_NAMES: Record<string, string> = {
   lck: 'LCK',
   msi: 'MSI',
@@ -60,6 +63,9 @@ export const NAVER_LEAGUE_DISPLAY_NAMES: Record<string, string> = {
  *
  * 자세한 trade-off·결정 진화는 CLAUDE.md "Phase 3 lookback window 결정" 참조.
  */
+// TODO: 이거 우선 3 + 2로 하되, 나중에는 로직을 가지고 수정이 필요한 부분임
+// TODO: 근데 소비자의 니즈가 과거 데이터 보는 것도 있을 거 같다는 느낌이 들어서 향후 고민해 볼 부분임
+// TODO: 전체 데이터를 가저가는 행위가 큰 짐이 되는지 파악 필요
 const MONTHS_BEFORE = 3;
 const MONTHS_AHEAD = 2;
 
@@ -75,17 +81,21 @@ const THROTTLE_MS = 250;
 /**
  * 하나의 (topLeagueId, YYYY-MM) 조합을 호출.
  *
- * 200 외 응답은 throw → 호출부에서 fallback 결정.
+ * 200 외 응답은 throw → main()까지 propagate되어 워크플로 실패.
  * invalid ID·빈 월은 200 + matches=[] → 자연 빈 배열 반환.
  */
 export async function fetchNaverScheduleMonth(
   topLeagueId: string,
   yearMonth: string,
 ): Promise<Match[]> {
+  // TODO: 아니 relay는 대체 무슨 역할일까?
   const url = `${API_BASE}/schedule/month?month=${yearMonth}&topLeagueId=${topLeagueId}&relay=false`;
+  // TODO: 원래 user-agent 필드가 이걸 넣는게 맞나?
   const response = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
 
   if (!response.ok) {
+    // TODO: 이 부분도 응답 케이스에 따라 좀 세분화해서 나누는게 나을지? 아니면 지금 단계에서는 외부의 영역이므로 생길 때마다 넣는게 나을지?
+    // TODO: 나는 후자라고 보는데, 최소한 에러 코드는 알려줘야 할듯.
     throw new Error(
       `Naver esports API failed: ${response.status} ${response.statusText} (topLeagueId=${topLeagueId}, month=${yearMonth})`,
     );
@@ -101,9 +111,10 @@ export async function fetchNaverScheduleMonth(
  * 6 대회 × (현재월-3 ~ 현재월+1) = 5개월 순차 fetch → 단일 Match[].
  *
  * 순차 호출(병렬 X) + 250ms throttle: CLAUDE.md 모범사례. 네이버 burst rate
- * limit 회피(실측 429), 부담 최소. 한 호출 실패 시 throw → 호출부(main.ts)에서
- * lolesports fallback 판단.
+ * limit 회피(실측 429), 부담 최소. 한 호출 실패 시 throw → 호출부(main.ts)가
+ * 그대로 propagate해 워크플로 실패로 인지 (GitHub Pages는 마지막 성공본 유지).
  */
+// TODO: promise.all()로 나중에 병렬처리 해보는게 좋지 않을까? 왜 순차 처리를 택했는지?
 export async function fetchAllNaverMatches(): Promise<Match[]> {
   const months = enumerateMonths(new Date(), MONTHS_BEFORE, MONTHS_AHEAD);
   const leagueIds = Object.values(NAVER_LEAGUE_IDS);
@@ -123,6 +134,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// TODO: 왜 enumerateMonths로 배열화해야하는지?
 /**
  * `start`의 UTC 월을 기준으로 (현재월-before … 현재월 … 현재월+after-1) "YYYY-MM" 배열.
  * UTC 기준 — TZ 영향 회피, 결정성 확보 (테스트 가능).
@@ -184,7 +196,7 @@ interface NaverTeam {
  * - content 또는 matches 없으면 빈 배열
  * - homeTeam/awayTeam 누락이거나 이름 비어있으면 skip (TBD 안전)
  * - maxMatchCount 1/3/5 외는 skip (Bo2/Bo7 안전)
- * - id는 "naver:" 접두 → ICS UID 충돌 회피 (Phase 2 lolesports id와 namespace 분리)
+ * - id는 "naver:" 접두 → 다른 소스로 전환 시 UID 충돌 회피용 namespace
  * - startDate(epoch ms, UTC) → ISO 8601 UTC string
  */
 export function parseNaverResponse(
@@ -200,6 +212,7 @@ export function parseNaverResponse(
   return { matches };
 }
 
+// TODO: 결국 이게 우리 DTO로 바꾸는건데, 위에 너무 함수분리가 많은 거 같음...
 function toMatch(item: NaverMatch, displayName: string): Match | null {
   const home = item.homeTeam;
   const away = item.awayTeam;

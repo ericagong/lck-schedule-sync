@@ -5,9 +5,9 @@
  * ics-generator에 통과시켜 팀 필터 없는 ICS를 생성. 6 league 모든 매치가
  * 한 캘린더 안에 들어가므로 SUMMARY·시간·stage·한국어 팀명 시각 검증 가능.
  *
- * Phase 2 verify와의 차이:
- * - 데이터 소스: lolesports → 네이버 (fixtures/phase-3/*.json)
- * - UID: 네이버 매치는 `naver:` 접두 → ICS 출력에서 lolesports와 충돌 X
+ * 특이점:
+ * - 데이터 소스: 네이버 esports JSON (fixtures/phase-3/*.json)
+ * - UID: 네이버 매치는 `naver:` 접두 (소스 namespace)
  * - displayName 주입: topLeagueId → 한국어 매핑 (응답에 inline 없음)
  *
  * 사용:

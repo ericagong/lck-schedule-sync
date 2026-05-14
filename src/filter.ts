@@ -10,7 +10,7 @@ import type { Match } from './core/types.js';
  * 지정한 팀 코드가 참여하는 매치만 반환.
  *
  * @param matches 전체 매치 목록
- * @param teamCode 필터링할 팀의 lolesports code (예: "T1")
+ * @param teamCode 필터링할 팀 코드 (예: "T1", "GEN"). 네이버 응답의 `nameEngAcronym` 값.
  * @returns teamA 또는 teamB의 code가 일치하는 매치만 (순서 보존)
  */
 export function filterByTeam(matches: readonly Match[], teamCode: string): Match[] {

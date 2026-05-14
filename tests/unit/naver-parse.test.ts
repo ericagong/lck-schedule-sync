@@ -22,7 +22,7 @@ describe('parseNaverResponse — LCK sample', () => {
     expect(matches).toHaveLength(4);
   });
 
-  it('UID는 "naver:" 접두 (lolesports와 namespace 분리)', () => {
+  it('UID는 "naver:" 접두 (소스 namespace)', () => {
     expect(matches[0]?.id).toBe('naver:2026050117ii8PCnB4429lol');
   });
 
@@ -43,7 +43,7 @@ describe('parseNaverResponse — LCK sample', () => {
     expect(matches[0]?.teamA.displayName).toBe('DN 수퍼스');
   });
 
-  it('awayTeam 동일 매핑 (한국어 그대로, team-names.ts 우회)', () => {
+  it('awayTeam 동일 매핑 (네이버 응답이 한국어 그대로 제공)', () => {
     expect(matches[0]?.teamB.code).toBe('BRO');
     expect(matches[0]?.teamB.displayName).toBe('한진 브리온');
   });
@@ -96,7 +96,7 @@ describe('parseNaverResponse — status enum 매핑', () => {
     expect(matches[0]?.status).toBe('canceled');
   });
 
-  it('알려지지 않은 상태 (예: DELAYED) → scheduled (lolesports와 일관, silent drop X)', () => {
+  it('알려지지 않은 상태 (예: DELAYED) → scheduled (silent drop X, 안전 기본값)', () => {
     const { matches } = parseNaverResponse(makeResponse('DELAYED'), 'LCK');
     expect(matches[0]?.status).toBe('scheduled');
   });
