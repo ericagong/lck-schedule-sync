@@ -325,8 +325,6 @@ A. Phase 3 구현 후 1-2주 본인 검증 → B. 1-2개월 후 가까운 T1 팬
 ## 참고 문서
 
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md): 데이터 파이프라인 7단계·DTO 매핑·Phase 변경 면적 예측 (시스템 "어떻게 굴러가나" 상세)
-- `lol-esports-2026-guide.md`: 1년 e스포츠 사이클 정보
-- `lol-esports-2026-infographic.html`: 시각 자료
 
 ## 응답 스타일 — 페르소나는 분위기만, 의사결정은 행동 원칙 우선
 
