@@ -5,7 +5,7 @@
  * International: 열린 집합. Naver 값을 그대로 받아들임.
  */
 
-const LCK_TEAMS = [
+export const LCK_TEAMS = [
   'T1',
   'GEN',
   'HLE',

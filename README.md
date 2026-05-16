@@ -1,8 +1,8 @@
 # lck-schedule-sync
 
-> **단 한 경기도 놓치지 않게.** T1 팬을 위한 LCK 일정 자동 동기화 `.ics` 피드.
+> **단 한 경기도 놓치지 않게.** LCK 팬을 위한 팀별 일정 자동 동기화 `.ics` 피드.
 
-자기 캘린더 앱(Google · Apple · Outlook)에 URL 한 줄로 구독하면 T1이 출전하는 LCK + 국제 대회 매치만 자동으로 흘러들어옵니다. 톡캘린더처럼 카카오톡에 갇히지 않고, **자기가 쓰는 캘린더 안에서** 다른 일정과 충돌까지 시각적으로 확인 가능.
+자기 캘린더 앱(Google · Apple · Outlook)에 URL 한 줄로 구독하면 응원하는 LCK 팀이 출전하는 LCK + 국제 대회 매치만 자동으로 흘러들어옵니다. 톡캘린더처럼 카카오톡에 갇히지 않고, **자기가 쓰는 캘린더 안에서** 다른 일정과 충돌까지 시각적으로 확인 가능.
 
 ## 차별점 — 왜 만들었나
 
@@ -11,19 +11,36 @@
 | 비교점    | 톡캘린더·OP.GG 앱       | 이 서비스                             |
 | --------- | ----------------------- | ------------------------------------- |
 | 앱 종속   | 카카오톡·OP.GG 앱 필수  | **모든 캘린더 호환**                  |
-| 필터링    | 리그 단위만 (10팀 전부) | **팀 단위 (T1만, 노이즈 84% 제거)**   |
+| 필터링    | 리그 단위만 (10팀 전부) | **팀 단위 (1팀만, 노이즈 84% 제거)**  |
 | 충돌 검사 | 안 됨                   | **자기 캘린더 일정과 시각 통합**      |
 | 알림 형식 | 앱이 정한 형식          | **캘린더 앱이 정한 형식 (자기 취향)** |
 
-대회 6개 통합: LCK · MSI · Worlds · First Stand · EWC · KeSPA Cup — T1 출전 매치만 단일 `t1.ics`에.
+대회 6개 통합: LCK · MSI · Worlds · First Stand · EWC · KeSPA Cup — 팀별 출전 매치만 각 `.ics`에.
 
 ## 구독 방법
 
-GitHub Pages URL:
+### 👉 팀 선택 페이지 (가장 쉬움)
 
-```text
-https://ericagong.github.io/lck-schedule-sync/t1.ics
-```
+<https://ericagong.github.io/lck-schedule-sync/>
+
+응원 팀을 클릭하면 구독 URL이 나옵니다. 복사해서 캘린더 앱에 붙여넣기.
+
+### 직접 URL (LCK 10팀 전체)
+
+| 팀                 | 구독 URL                                                |
+| ------------------ | ------------------------------------------------------- |
+| T1                 | `https://ericagong.github.io/lck-schedule-sync/t1.ics`  |
+| 젠지 (GEN)         | `https://ericagong.github.io/lck-schedule-sync/gen.ics` |
+| 한화생명 (HLE)     | `https://ericagong.github.io/lck-schedule-sync/hle.ics` |
+| 디플러스 기아 (DK) | `https://ericagong.github.io/lck-schedule-sync/dk.ics`  |
+| KT                 | `https://ericagong.github.io/lck-schedule-sync/kt.ics`  |
+| DRX (KRX)          | `https://ericagong.github.io/lck-schedule-sync/krx.ics` |
+| 한진 브리온 (BRO)  | `https://ericagong.github.io/lck-schedule-sync/bro.ics` |
+| BNK 피어엑스 (BFX) | `https://ericagong.github.io/lck-schedule-sync/bfx.ics` |
+| 농심 (NS)          | `https://ericagong.github.io/lck-schedule-sync/ns.ics`  |
+| DN 수퍼스 (DNS)    | `https://ericagong.github.io/lck-schedule-sync/dns.ics` |
+
+각 ICS는 해당 팀의 출전 매치(LCK 정규시즌·플옵·결승 + MSI·Worlds·FST·EWC·KeSPA 등 T1처럼 출전 시 자연 포함)만 담습니다.
 
 > ⚠️ **"구독(Subscribe)"으로 추가, "Import / 가져오기" 금지**: ICS를 import로 추가하면 일회성 사본이라 **자동 갱신 X**, 매 갱신마다 **중복 이벤트** 쌓일 수 있음. 아래 절차는 모두 URL 구독(`URL로 만들기` · `새로운 캘린더 구독…` · `인터넷에서 구독`)을 씁니다.
 
@@ -103,14 +120,14 @@ https://ericagong.github.io/lck-schedule-sync/t1.ics
 
 [네이버 esports](https://game.naver.com/esports)의 JSON API (비공식)를 단일 소스로 사용. 6 대회 통합 fetch:
 
-| 대회                    | 비고                        |
-| ----------------------- | --------------------------- |
-| LCK                     | T1 정규시즌·플레이오프·결승 |
-| MSI                     | T1 출전 시                  |
-| Worlds (월드 챔피언십)  | T1 출전 시                  |
-| First Stand             | LCK 대표 출전 시            |
-| EWC (eSports World Cup) | T1 출전 시                  |
-| KeSPA Cup               | T1 출전 시                  |
+| 대회                    | 비고                                       |
+| ----------------------- | ------------------------------------------ |
+| LCK                     | 정규시즌·플레이오프·결승 + Road to국제대회 |
+| MSI                     | 팀 출전 시 자동 포함                       |
+| Worlds (월드 챔피언십)  | 팀 출전 시 자동 포함                       |
+| First Stand             | LCK 대표 출전 시                           |
+| EWC (eSports World Cup) | 팀 출전 시 자동 포함                       |
+| KeSPA Cup               | 팀 출전 시 자동 포함                       |
 
 > 아시안 게임은 4년 주기·자동화 외 (다음 AG 시점에 수동 또는 별도 메커니즘 검토).
 
@@ -164,7 +181,7 @@ curl -s https://ericagong.github.io/lck-schedule-sync/t1.ics | grep -A 1 SUMMARY
 - <https://larrybolt.github.io/online-ics-feed-viewer/>
 - <https://icalendar.org/validator.html>
 
-> ⚠️ viewer에 URL 넣을 때는 반드시 **`/t1.ics`까지 포함**. 루트 URL(`/`)은 index.html이 없어 404. 정확한 형식: `https://ericagong.github.io/lck-schedule-sync/t1.ics`
+> ⚠️ viewer에 URL 넣을 때는 반드시 **`/팀코드.ics`까지 포함**. 루트 URL(`/`)은 팀 선택 페이지로 가니까 viewer엔 안 됨. 정확한 형식: `https://ericagong.github.io/lck-schedule-sync/t1.ics` (다른 팀은 위 표 참조)
 
 ### 2. 산출물에는 있는데 캘린더에 없음 = 캐싱 lag
 
