@@ -26,7 +26,7 @@ function icsFilename(teamCode: LckTeamCode): string {
 }
 
 function calendarName(teamCode: LckTeamCode): string {
-  return `${LCK_TEAM_DISPLAY_NAME[teamCode]} LCK 일정`;
+  return `${LCK_TEAM_DISPLAY_NAME[teamCode]} 경기 일정`;
 }
 
 async function publishTeamIcs(matches: readonly Match[], teamCode: LckTeamCode): Promise<number> {

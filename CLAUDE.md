@@ -416,7 +416,7 @@ ics.ts에 남아있던 도메인 로직 4개를 Match getter로 이동 — `endD
 
 ### 디자인 default
 
-- **캘린더 이름**: `{팀 한국어명} LCK 일정` (예: "젠지 LCK 일정", "한화생명 LCK 일정") — 현재 패턴 유지로 기존 T1 사용자 일관성
+- **캘린더 이름**: `{팀 한국어명} 경기 일정` (예: "T1 경기 일정", "젠지 경기 일정") — LCK 외 대회(MSI·Worlds·EWC 등)도 포함되므로 "LCK 일정"보다 정확. 기존 T1 사용자는 X-WR-CALNAME만 변경되며 캘린더에 자동 적용 안 됨(각자 이미 설정한 캘린더 이름 유지)
 - **ICS 파일명**: `{teamCode.toLowerCase()}.ics` (예: t1.ics, gen.ics, krx.ics)
 - **landing 스타일**: pure HTML + 인라인 CSS + vanilla JS — 외부 의존성 0, 빠른 로딩, 자유로운 호스팅
 - **인터랙션**: 팀 클릭 → 구독 URL 표시 + 클립보드 복사 (Google/Apple 직접 추가 링크는 README 위임)
