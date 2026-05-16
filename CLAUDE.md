@@ -81,8 +81,8 @@ Phase 5 (선택): 운영 강화
 ## 환경 정보
 
 - **Package manager**: pnpm 9 (`packageManager` 필드로 강제)
-- **Node**: >= 20 (engine-strict)
-- **테스트**: Vitest 1.x
+- **Node**: >= 22 (engine-strict)
+- **테스트**: Vitest 4.x
 - **API key**: 없음 — 네이버 esports JSON API는 무인증 (User-Agent에 본 레포 URL 명시)
 
 ## 자주 쓰는 명령
@@ -90,8 +90,9 @@ Phase 5 (선택): 운영 강화
 ```bash
 pnpm install
 pnpm dev          # public/t1.ics 생성
-pnpm test         # 48개 단위 테스트
+pnpm test         # 96개 단위 테스트
 pnpm typecheck
+pnpm check        # typecheck + lint + format + test 한 번에
 ```
 
 ## Phase 1 발견 사항 (2026-05-12)

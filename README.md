@@ -146,6 +146,51 @@ https://ericagong.github.io/lck-schedule-sync/t1.ics
 - **GitHub Pages는 마지막 성공본을 계속 서빙** → 사용자 캘린더의 기존 매치는 그대로 유지
 - 다음 cron(최대 12h 후)에서 자연 회복 → 신규 매치만 일시 lag
 
+## 캘린더에 새 매치가 안 보일 때 (트러블슈팅)
+
+Google Calendar는 12-24시간마다 자동 fetch — 우리가 발행한 새 매치가 사용자 캘린더에 도달하는 데 lag이 있습니다. **새 매치가 안 보이면** 다음 순서로 확인:
+
+### 1. 산출물 자체에 매치 있는지 직접 확인 (10초)
+
+ICS 파일을 캘린더 거치지 않고 직접 검증:
+
+```bash
+# 터미널 (curl 가능하면 가장 빠름)
+curl -s https://ericagong.github.io/lck-schedule-sync/t1.ics | grep -A 1 SUMMARY
+```
+
+또는 브라우저 — online ICS viewer에 URL 붙여넣기:
+
+- <https://larrybolt.github.io/online-ics-feed-viewer/>
+- <https://icalendar.org/validator.html>
+
+> ⚠️ viewer에 URL 넣을 때는 반드시 **`/t1.ics`까지 포함**. 루트 URL(`/`)은 index.html이 없어 404. 정확한 형식: `https://ericagong.github.io/lck-schedule-sync/t1.ics`
+
+### 2. 산출물에는 있는데 캘린더에 없음 = 캐싱 lag
+
+Google Calendar fetch 캐시가 갱신 안 됨. 즉시 해결 두 가지:
+
+**옵션 A — URL에 dummy query 붙여 재구독 (가장 확실)**:
+
+```text
+https://ericagong.github.io/lck-schedule-sync/t1.ics?v=20260517
+```
+
+`?v=...` 부분은 우리 서버가 무시 (같은 파일 서빙). Google은 "새 URL"로 인식해 캐시 거치지 않고 즉시 fetch. 새 캘린더로 등록 후 기존 구독은 삭제.
+
+**옵션 B — 기존 구독 그대로 두고 fetch 도래 대기**:
+
+- Google Calendar: 자체 12-24h 주기 도래까지 자동 대기
+- Apple Calendar: 환경설정 → 계정 → 새로 고침 주기를 5분으로 임시 변경
+- Outlook: 마우스 우클릭 → "지금 동기화"
+
+### 3. 산출물에도 없음 = 데이터 등록 lag 또는 우리 버그
+
+- **데이터 등록 lag**: 네이버가 아직 해당 매치를 등록 안 함. 매일 2회 cron이 자동 흡수 (최대 12h)
+- **우리 버그 의심**: [GitHub Issue](https://github.com/ericagong/lck-schedule-sync/issues) 부탁
+
+> 참고: Road to EWC·EWC 본선은 별도 데이터. Road to EWC는 LCK 진출 선발전(`ewc_lol` endpoint)으로 흡수되어 발행됨. EWC 본선은 네이버가 사우디 본선 일정 발표 후 등록.
+
 ## 표시 범위 — 5개월 rolling
 
 이 ICS는 **과거 3개월 + 현재월 + 미래 1개월** (총 5개월 rolling 윈도우) 매치만 담습니다. 캘린더 본질이 "다가오는 일정 관리"라는 판단 — 자세한 결정 배경은 [`DECISION_MAKING.md`](./DECISION_MAKING.md) 참조.

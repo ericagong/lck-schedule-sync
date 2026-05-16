@@ -41,9 +41,9 @@ flowchart TD
 ```mermaid
 flowchart TD
     rawJson[네이버 esports JSON]
-    rawJson -->|"① fetch + parse<br/>naver.ts"| matches[Match<br/>도메인 객체 7 필드]
-    matches -->|"② selectActiveTeamMatches<br/>filter.ts"| active[T1 활성 매치만]
-    active -->|"③ generateIcs (sort 내장)<br/>ics-generator.ts"| ics[ICS 문자열<br/>RFC 5545]
+    rawJson -->|"① fetch + parse<br/>naver.ts"| matches[Match<br/>도메인 클래스 (8 필드 + 게터)]
+    matches -->|"② inline filter<br/>main.ts: involves + isActive"| active[T1 활성 매치만]
+    active -->|"③ generateIcs (sort 내장)<br/>ics.ts"| ics[ICS 문자열<br/>RFC 5545 UTC]
     ics -->|"④ writeFile<br/>main.ts"| output[public/t1.ics]
 
     style rawJson fill:#F1EFE8,stroke:#888780,color:#2C2C2A
@@ -56,49 +56,51 @@ flowchart TD
     linkStyle 3 stroke:#BA7517,stroke-width:2px
 ```
 
-호박색 화살표(①, ④)만 side effect. ②~③은 전부 순수 함수 → 단위 테스트의 토대.
+호박색 화살표(①, ④)만 side effect. ②~③은 전부 순수 → 단위 테스트의 토대.
 
-| #   | 단계                      | 순수?          | 파일 · 함수                         |
-| --- | ------------------------- | -------------- | ----------------------------------- |
-| ①   | fetch + parse             | ❌ side effect | `naver.ts:fetchAllNaverMatches`     |
-| ②   | 팀 활성 매치 선별         | ✅             | `filter.ts:selectActiveTeamMatches` |
-| ③   | ICS 직조 (시작 시각 정렬) | ✅             | `ics-generator.ts:generateIcs`      |
-| ④   | 파일 쓰기                 | ❌ side effect | `main.ts` — `public/t1.ics` 출력    |
+| #   | 단계                      | 순수?          | 파일 · 함수                                         |
+| --- | ------------------------- | -------------- | --------------------------------------------------- |
+| ①   | fetch + parse             | ❌ side effect | `naver.ts:fetchAllMatches`                          |
+| ②   | 팀 활성 매치 선별         | ✅             | `main.ts` 인라인 (`m.involves(code) && m.isActive`) |
+| ③   | ICS 직조 (시작 시각 정렬) | ✅             | `ics.ts:generateIcs`                                |
+| ④   | 파일 쓰기                 | ❌ side effect | `main.ts` — `public/t1.ics` 출력                    |
 
 ---
 
 ## 3. 핵심 변환 상세
 
-### 3.1 ① parse + normalize — raw API → 도메인 7필드
+### 3.1 ① parse + normalize — raw API → 도메인 Match
 
-가장 정보 손실이 큰 단계. `naver.ts:parseNaverResponse`의 for-of + continue 가드에 결정을 응축 → ②~④는 source 무관 (다른 소스로 전환할 일이 생겨도 ②~④는 그대로).
+가장 정보 손실이 큰 단계. `naver.ts:toMatch`의 zod safeParse + 가드에 결정을 응축 → ②~④는 source 무관 (다른 소스로 전환할 일이 생겨도 ②~④는 그대로).
 
-| 행위                                                    | 처리 위치                                                                  |
-| ------------------------------------------------------- | -------------------------------------------------------------------------- |
-| 타입 가드 (TBD, teams.length, 누락 필드 등) silent drop | `naver.ts:parseNaverResponse`                                              |
-| 시간 정규화 → UTC ISO                                   | `new Date(startDate).toISOString()` (epoch ms → ISO)                       |
-| `bestOf` 1·3·5만 허용, 외는 drop                        | `naver.ts:parseNaverResponse` (Bo2·Bo7 silent skip, type narrowing 가드)   |
-| status 정규화 (3값으로 축소)                            | `matchStatus` → `normalizeStatus` (`scheduled` · `completed` · `canceled`) |
-| 한국어 팀 displayName                                   | `homeTeam.name` 그대로 (네이버 응답이 한국어 자연 풍부)                    |
-| UID 멱등성 + namespace                                  | `naver:${gameId}` 접두 (소스 전환 시 충돌 회피용 namespace)                |
+| 행위                                                    | 처리 위치                                                                |
+| ------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 타입 가드 (TBD, teams.length, 누락 필드 등) silent drop | `naver.ts:toMatch` (zod safeParse + null 분기)                           |
+| 시간 정규화 → UTC ISO                                   | `naver.ts:epochMsToIsoUtc` (epoch ms → ISO)                              |
+| `bestOf` 1·3·5만 허용, 외는 throw                       | `match.ts:assertBestOf` (Bo2·Bo7 등 계약 위반 → throw)                   |
+| status 정규화 (3값으로 축소)                            | `matchStatus` → `toMatchStatus` (`scheduled` · `completed` · `canceled`) |
+| 한국어 팀 displayName                                   | LCK 팀은 도메인 표준(`LCK_TEAM_DISPLAY_NAME`), 그 외 네이버 값 그대로    |
+| UID 멱등성 + namespace                                  | `naver:${gameId}` 접두 (소스 전환 시 충돌 회피용 namespace)              |
 
 ### 3.2 ③ generateIcs — RFC 5545 직조 (시작 시각 정렬 내장)
 
-| 변환                                   | 코드 위치                              | 비고                                                             |
-| -------------------------------------- | -------------------------------------- | ---------------------------------------------------------------- |
-| UTC ISO → KST (TZID 명시)              | `ics-generator.ts:formatKstCompact`    | `+9h` shift 트릭은 `toKstParts` 안에 격리                        |
-| DTEND 추정 (Bo1=+1h·Bo3=+3h·Bo5=+4.5h) | `ics-generator.ts:estimateMatchEnd`    | API가 종료 시각 미제공 → 실측 기반 평균                          |
-| VTIMEZONE 블록 명시                    | `ics-generator.ts:buildVTimezoneBlock` | TZID만 쓰면 Apple Calendar·Outlook 호환 불안 → 블록도 박음       |
-| `escapeText` + `foldLine`              | `ics-generator.ts`                     | RFC 5545: 콤마·세미콜론·줄바꿈 escape + UTF-8 75바이트 라인 폴딩 |
-| UID = `${match.id}@lck-schedule-sync`  | `ics-generator.ts`                     | 멱등성 — 같은 매치 = 같은 UID → 캘린더 중복 없이 갱신            |
+| 변환                                   | 코드 위치                                        | 비고                                                                   |
+| -------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------- |
+| UTC compact 출력 (`Z` suffix)          | `ics.ts:formatUtcCompact`                        | 캘린더 앱이 사용자 로컬 timezone으로 자동 변환 (TZID·VTIMEZONE 불필요) |
+| DTEND 추정 (Bo1=+1h·Bo3=+3h·Bo5=+4.5h) | `match.ts:Match.endDate` (게터)                  | 도메인 응집 — API가 종료 시각 미제공 → 실측 기반 평균                  |
+| DTSTAMP 안정값                         | `match.startDate` 사용                           | 같은 매치 = 같은 DTSTAMP → cron 재발행 시 캘린더 "업데이트됨" 노이즈 0 |
+| SUMMARY · DESCRIPTION 본문             | `match.ts:Match.summary` / `.description` (게터) | 도메인 표현 응집 — ics.ts는 형식화만                                   |
+| `escapeText` + `foldLine`              | `ics.ts`                                         | RFC 5545: 콤마·세미콜론·줄바꿈 escape + UTF-8 75바이트 라인 폴딩       |
+| UID = `${match.id}@lck-schedule-sync`  | `ics.ts:matchToVeventLines`                      | 멱등성 — 같은 매치 = 같은 UID → 캘린더 중복 없이 갱신                  |
 
 **변환 예시** (Match → VEVENT 핵심 라인):
 
 ```
 Match { startsAt: '2026-04-08T10:00:00Z', bestOf: 3 }
   ↓
-DTSTART;TZID=Asia/Seoul:20260408T190000   ← UTC 10:00 → KST 19:00
-DTEND;TZID=Asia/Seoul:20260408T220000     ← +3h (Bo3)
+DTSTART:20260408T100000Z   ← UTC compact, 캘린더가 로컬 timezone으로 자동 변환
+DTEND:20260408T130000Z     ← +3h (Bo3 평균)
+DTSTAMP:20260408T100000Z   ← 안정값 (= startsAt)
 SUMMARY:T1 vs 젠지 — LCK 정규시즌 2R (Bo3)
 ```
 
@@ -125,27 +127,38 @@ interface NaverMatch {
 
 ⚠️ **displayName 출처**: 네이버 응답에 사람이 읽을 league.name 필드는 없음 → `NAVER_LEAGUE_DISPLAY_NAMES` 매핑 테이블이 `topLeagueId`로 주입. 6 대회 한정이라 단순.
 
-### 4.2 Match — 도메인 객체
+### 4.2 Match — 도메인 클래스
 
-`src/types.ts`. 7 top-level 필드, 불변·`readonly` 강제. 소스가 바뀌어도 이 모양이 변경 차단막.
+`src/match.ts`. 8 readonly 필드 + 5 derived getter + ICS 출력 표현 게터 4개. 소스가 바뀌어도 이 모양이 변경 차단막.
 
 ```ts
-interface Match {
+class Match {
   readonly id: string; // = "naver:<gameId>" → ICS UID
-  readonly tournament: {
-    readonly displayName: string; // "LCK"
-    readonly stage: string; // "정규시즌 2R"
-  };
+  readonly league: League; // "LCK" · "MSI" · "WORLDS" · ... (도메인 enum)
+  readonly stage: string; // "정규시즌 2R" (네이버 raw 그대로)
   readonly teamA: Team;
   readonly teamB: Team;
   readonly startsAt: string; // ISO 8601 UTC
   readonly bestOf: 1 | 3 | 5;
   readonly status: 'scheduled' | 'completed' | 'canceled';
+
+  // 도메인 술어
+  get isActive(): boolean;
+  involves(teamCode: string): boolean;
+
+  // 도메인 표현 (ICS 출력에 사용)
+  get startDate(): Date;
+  get endDate(): Date; // startDate + Bo별 평균 길이
+  get matchup(): string; // "T1 vs 젠지"
+  get tournamentLabel(): string; // "LCK 정규시즌 2R"
+  get summary(): string; // "T1 vs 젠지 — LCK 정규시즌 2R (Bo3)"
+  get description(): string; // 여러 줄 본문
+  get streamUrl(): string;
 }
 
 interface Team {
-  readonly code: string; // "T1" (nameEngAcronym)
-  readonly displayName: string; // "T1", "젠지" (네이버 응답 한국어 그대로)
+  readonly code: string; // "T1" (nameEngAcronym 또는 LckTeamCode)
+  readonly displayName: string; // "T1", "젠지" (LCK 팀은 도메인 표준 우선)
 }
 ```
 
@@ -154,15 +167,17 @@ interface Team {
 ```
 BEGIN:VEVENT
 UID:naver:2026050117ii8PCnB4429lol@lck-schedule-sync
-DTSTAMP:20260513T020000Z
-DTSTART;TZID=Asia/Seoul:20260520T190000
-DTEND;TZID=Asia/Seoul:20260520T220000
+DTSTAMP:20260520T100000Z
+DTSTART:20260520T100000Z
+DTEND:20260520T130000Z
 SUMMARY:T1 vs 젠지 — LCK 정규시즌 2R (Bo3)
 DESCRIPTION:T1 vs 젠지\nLCK — 정규시즌 2R\nBest of 3\n\n중계: https://lolesports.com/
 STATUS:CONFIRMED
 URL:https://lolesports.com/
 END:VEVENT
 ```
+
+모든 시각이 UTC compact (`Z` suffix) — 캘린더 앱이 사용자 로컬 timezone으로 자동 변환. DTSTAMP는 `match.startDate`와 동일(안정값).
 
 ### 4.4 iCalendar 구독 동기화 메커니즘
 
