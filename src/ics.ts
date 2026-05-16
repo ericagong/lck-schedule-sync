@@ -9,8 +9,6 @@ import type { Match } from './match.js';
 
 type IcsOptions = {
   readonly calendarName: string;
-  /** DTSTAMP용. 테스트 주입. 미지정 시 new Date(). */
-  readonly now?: Date;
 };
 
 const PRODID = '-//lck-schedule-sync//T1//KO';
@@ -76,11 +74,16 @@ function buildCalendarHeader(options: IcsOptions): string[] {
   ];
 }
 
-function matchToVeventLines(match: Match, now: Date): string[] {
+/**
+ * DTSTAMP는 발행 시각이 아닌 매치 시작 시각을 사용 — 같은 매치는 항상 같은
+ * DTSTAMP라 cron 재발행 시 일부 캘린더 클라이언트(특히 Outlook)가
+ * "업데이트됨"으로 인식하는 노이즈를 회피. UID 멱등성과 같은 결.
+ */
+function matchToVeventLines(match: Match): string[] {
   return [
     'BEGIN:VEVENT',
     `UID:${match.id}@lck-schedule-sync`,
-    `DTSTAMP:${formatUtcCompact(now)}`,
+    `DTSTAMP:${formatUtcCompact(match.startDate)}`,
     `DTSTART:${formatUtcCompact(match.startDate)}`,
     `DTEND:${formatUtcCompact(match.endDate)}`,
     `SUMMARY:${escapeText(match.summary)}`,
@@ -95,14 +98,13 @@ function matchToVeventLines(match: Match, now: Date): string[] {
  * deterministic 출력 — 입력 매치를 시작시각 오름차순 정렬.
  */
 export function generateIcs(matches: readonly Match[], options: IcsOptions): string {
-  const now = options.now ?? new Date();
   const sorted = [...matches].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 
   return (
     [
       'BEGIN:VCALENDAR',
       ...buildCalendarHeader(options),
-      ...sorted.flatMap((m) => matchToVeventLines(m, now)),
+      ...sorted.flatMap((m) => matchToVeventLines(m)),
       'END:VCALENDAR',
     ]
       .map(foldLine)
