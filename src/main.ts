@@ -46,6 +46,15 @@ async function main(): Promise<void> {
   const matches = await fetchAllMatches();
   log.info(`Got ${matches.length} matches.`);
 
+  // Sanity check — fetch는 성공했지만 모든 매치가 parse fail이면 silent fail.
+  // 빈 ICS 발행 시 사용자 캘린더 통째 비어지므로 명시적으로 워크플로 실패시킴.
+  // 시즌 외 기간(LCK 휴식기)에도 KeSPA·국제대회 등 어딘가에 매치가 있어야 정상.
+  if (matches.length === 0) {
+    throw new Error(
+      'Suspicious: 0 matches from naver — silent fail 의심 (네이버 응답 구조 변경 가능성)',
+    );
+  }
+
   await mkdir(PUBLIC_DIR, { recursive: true });
 
   for (const teamCode of LCK_TEAMS) {
