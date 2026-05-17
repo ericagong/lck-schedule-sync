@@ -69,4 +69,30 @@ describe('buildIndexHtml — 정적 HTML 생성 (순수 함수)', () => {
       expect(html).toContain('data-url="https://example.com?a=1&amp;b=2/t1.ics"');
     });
   });
+
+  describe('이모지 카테고리 (한국 사용자 친화)', () => {
+    const html = buildIndexHtml(LCK_TEAMS, BASE_URL);
+
+    it('h1에 캘린더 이모지', () => {
+      expect(html).toMatch(/<h1>📅/);
+    });
+
+    it('intro에 게임 이모지', () => {
+      expect(html).toContain('🎮');
+    });
+
+    it('결과 영역에 링크·복사 이모지', () => {
+      expect(html).toContain('🔗');
+      expect(html).toContain('📋 복사');
+    });
+
+    it('hint에 팁 이모지', () => {
+      expect(html).toContain('💡');
+    });
+
+    it('footer에 GitHub·갱신 이모지', () => {
+      expect(html).toContain('⭐ GitHub');
+      expect(html).toContain('🔄');
+    });
+  });
 });

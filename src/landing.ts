@@ -135,9 +135,10 @@ export function buildIndexHtml(teams: readonly LckTeamCode[], baseUrl: string): 
     </style>
   </head>
   <body>
-    <h1>LCK 팀 일정 캘린더</h1>
+    <h1>📅 LCK 팀 일정 캘린더</h1>
     <p class="intro">
-      응원하는 팀을 선택하면 구독 URL이 나타납니다. 자기 캘린더 앱에 붙여넣어 자동 동기화하세요.
+      🎮 응원하는 팀을 선택하면 구독 URL이 나타납니다. 자기 캘린더 앱에 붙여넣어 자동
+      동기화하세요.
     </p>
 
     <div class="teams" role="list">
@@ -145,20 +146,20 @@ ${teamButtons}
     </div>
 
     <div id="result" aria-live="polite">
-      <p><strong id="selected"></strong> 구독 URL:</p>
+      <p>🔗 <strong id="selected"></strong> 구독 URL:</p>
       <div class="url-row">
         <input id="url" readonly aria-label="구독 URL" />
         <button id="copy" type="button">📋 복사</button>
       </div>
       <p class="hint">
-        구독 방법(Google Calendar · Apple Calendar 등):
+        💡 구독 방법(Google Calendar · Apple Calendar 등):
         <a href="${SUBSCRIBE_GUIDE_URL}" target="_blank" rel="noopener">README 참조</a>
       </p>
     </div>
 
     <div class="footer">
-      <a href="${REPO_URL}" target="_blank" rel="noopener">GitHub</a> · 매일 2회 (04:00 · 23:00
-      KST) 자동 갱신 · 비영리·비상업
+      <a href="${REPO_URL}" target="_blank" rel="noopener">⭐ GitHub</a> · 🔄 매일 2회 (04:00 ·
+      23:00 KST) 자동 갱신 · 비영리·비상업
     </div>
 
     <script>

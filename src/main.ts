@@ -14,7 +14,7 @@ import { LCK_TEAM_DISPLAY_NAME, LCK_TEAMS, type LckTeamCode } from './team.js';
 
 const PUBLIC_DIR = resolve('public');
 const BASE_URL = 'https://ericagong.github.io/lck-schedule-sync';
-const LOG_PREFIX = '[lol-schedule-sync]';
+const LOG_PREFIX = '[lck-schedule-sync]';
 
 const log = {
   info: (msg: string) => console.log(`${LOG_PREFIX} ${msg}`),
