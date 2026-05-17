@@ -27,10 +27,10 @@ describe('buildIndexHtml — 정적 HTML 생성 (순수 함수)', () => {
     const html = buildIndexHtml(['T1', 'GEN', 'KRX'], BASE_URL);
     expect(html).toContain('data-name="T1"');
     expect(html).toContain('data-name="젠지"');
-    expect(html).toContain('data-name="DRX"'); // KRX 표시명 = DRX
+    expect(html).toContain('data-name="KRX"'); // 2026~ 키움증권 후원 — 팀명 KRX
     expect(html).toContain('>T1</button>');
     expect(html).toContain('>젠지</button>');
-    expect(html).toContain('>DRX</button>');
+    expect(html).toContain('>KRX</button>');
   });
 
   it('LCK 10팀 모두 전달 시 10개 button', () => {

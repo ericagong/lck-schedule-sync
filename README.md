@@ -34,7 +34,7 @@
 | 한화생명 (HLE)     | `https://ericagong.github.io/lck-schedule-sync/hle.ics` |
 | 디플러스 기아 (DK) | `https://ericagong.github.io/lck-schedule-sync/dk.ics`  |
 | KT                 | `https://ericagong.github.io/lck-schedule-sync/kt.ics`  |
-| DRX (KRX)          | `https://ericagong.github.io/lck-schedule-sync/krx.ics` |
+| KRX                | `https://ericagong.github.io/lck-schedule-sync/krx.ics` |
 | 한진 브리온 (BRO)  | `https://ericagong.github.io/lck-schedule-sync/bro.ics` |
 | BNK 피어엑스 (BFX) | `https://ericagong.github.io/lck-schedule-sync/bfx.ics` |
 | 농심 (NS)          | `https://ericagong.github.io/lck-schedule-sync/ns.ics`  |
