@@ -7,6 +7,7 @@
   "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "tsx src/main.ts",
+    "view:ics": "tsx scripts/view-deployed.ts",
     "build": "tsc --noEmit && tsx src/main.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
