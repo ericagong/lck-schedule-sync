@@ -208,6 +208,8 @@ https://ericagong.github.io/lck-schedule-sync/t1.ics?v=20260517
 
 > 참고: Road to EWC·EWC 본선은 별도 데이터. Road to EWC는 LCK 진출 선발전(`ewc_lol` endpoint)으로 흡수되어 발행됨. EWC 본선은 네이버가 사우디 본선 일정 발표 후 등록.
 
+> 참고: 일부 대회(KeSPA Cup·온라인 대회 등)는 네이버에 치지직 다시보기 데이터가 없어 캘린더 DESCRIPTION에 다시보기 링크가 표시되지 않습니다. 그런 매치의 다시보기는 공식 채널(LCK YouTube·KeSPA Cup 공식 등)에서 직접 검색.
+
 ## 표시 범위 — 5개월 rolling
 
 이 ICS는 **과거 3개월 + 현재월 + 미래 1개월** (총 5개월 rolling 윈도우) 매치만 담습니다. 캘린더 본질이 "다가오는 일정 관리"라는 판단 — 자세한 결정 배경은 [`DECISION_MAKING.md`](./DECISION_MAKING.md) 참조.
