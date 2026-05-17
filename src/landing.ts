@@ -10,11 +10,17 @@ import { LCK_TEAM_DISPLAY_NAME, type LckTeamCode } from './team.js';
 const REPO_URL = 'https://github.com/ericagong/lck-schedule-sync';
 
 export function buildIndexHtml(teams: readonly LckTeamCode[], baseUrl: string): string {
+  // 첫 팀(보통 T1)을 기본 선택 — 페이지 로드 직후 URL이 즉시 표시되어 자연스러운 진입
+  const defaultTeam = teams[0];
+  const defaultUrl = defaultTeam ? `${baseUrl}/${defaultTeam.toLowerCase()}.ics` : '';
+  const defaultName = defaultTeam ? LCK_TEAM_DISPLAY_NAME[defaultTeam] : '';
+
   const teamButtons = teams
-    .map((code) => {
+    .map((code, i) => {
       const name = LCK_TEAM_DISPLAY_NAME[code];
       const url = `${baseUrl}/${code.toLowerCase()}.ics`;
-      return `      <button class="team" data-url="${escapeHtml(url)}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</button>`;
+      const activeClass = i === 0 ? ' active' : '';
+      return `      <button class="team${activeClass}" data-url="${escapeHtml(url)}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</button>`;
     })
     .join('\n');
 
@@ -213,10 +219,15 @@ export function buildIndexHtml(teams: readonly LckTeamCode[], baseUrl: string): 
 ${teamButtons}
     </div>
 
-    <div id="result" aria-live="polite">
-      <p>🔗 <strong id="selected"></strong> 구독 URL:</p>
+    <div id="result"${defaultTeam ? ' class="visible"' : ''} aria-live="polite">
+      <p>🔗 <strong id="selected">${escapeHtml(defaultName)}</strong> 구독 URL:</p>
       <div class="url-row">
-        <input id="url" readonly aria-label="구독 URL" />
+        <input
+          id="url"
+          readonly
+          aria-label="구독 URL"
+          value="${escapeHtml(defaultUrl)}"
+        />
         <button id="copy" type="button">📋 복사</button>
       </div>
       <p class="hint">💡 위 URL을 복사하고, 아래 가이드에서 자기 캘린더 앱에 등록하세요.</p>

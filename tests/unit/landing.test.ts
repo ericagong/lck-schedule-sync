@@ -13,7 +13,7 @@ describe('buildIndexHtml — 정적 HTML 생성 (순수 함수)', () => {
 
   it('전달된 팀마다 button 1개씩 생성', () => {
     const html = buildIndexHtml(['T1', 'GEN'], BASE_URL);
-    const buttonCount = (html.match(/<button class="team"/g) ?? []).length;
+    const buttonCount = (html.match(/<button class="team(?: active)?"/g) ?? []).length;
     expect(buttonCount).toBe(2);
   });
 
@@ -35,7 +35,7 @@ describe('buildIndexHtml — 정적 HTML 생성 (순수 함수)', () => {
 
   it('LCK 10팀 모두 전달 시 10개 button', () => {
     const html = buildIndexHtml(LCK_TEAMS, BASE_URL);
-    const buttonCount = (html.match(/<button class="team"/g) ?? []).length;
+    const buttonCount = (html.match(/<button class="team(?: active)?"/g) ?? []).length;
     expect(buttonCount).toBe(10);
   });
 
@@ -49,11 +49,46 @@ describe('buildIndexHtml — 정적 HTML 생성 (순수 함수)', () => {
     expect(html).toContain('https://github.com/ericagong/lck-schedule-sync');
   });
 
-  it('빈 팀 배열도 유효한 HTML', () => {
+  it('빈 팀 배열도 유효한 HTML (결과 박스 숨김)', () => {
     const html = buildIndexHtml([], BASE_URL);
     expect(html).toMatch(/^<!doctype html>/i);
     expect(html).toContain('</html>');
-    expect(html).not.toContain('<button class="team"');
+    expect(html).not.toContain('<button class="team');
+    // 빈 팀이면 결과 박스도 활성화 안 됨 (#result class="visible" 없음)
+    expect(html).toContain('<div id="result"');
+    expect(html).not.toContain('<div id="result" class="visible"');
+  });
+
+  describe('기본 선택 (첫 팀 — 보통 T1)', () => {
+    it('첫 팀 button에 active 클래스', () => {
+      const html = buildIndexHtml(['T1', 'GEN', 'HLE'], BASE_URL);
+      // 첫 button만 active
+      expect(html).toContain('<button class="team active" data-url');
+      // active button 정확히 1개 (첫 팀에만)
+      const activeMatches = html.match(/<button class="team active"/g) ?? [];
+      expect(activeMatches).toHaveLength(1);
+    });
+
+    it('첫 팀 URL이 기본 입력값으로 채워짐', () => {
+      const html = buildIndexHtml(['T1', 'GEN'], BASE_URL);
+      expect(html).toContain(`value="${BASE_URL}/t1.ics"`);
+    });
+
+    it('첫 팀 표시명이 selected에 채워짐', () => {
+      const html = buildIndexHtml(['T1', 'GEN'], BASE_URL);
+      expect(html).toContain('<strong id="selected">T1</strong>');
+    });
+
+    it('결과 박스가 기본 visible (페이지 로드 직후 표시)', () => {
+      const html = buildIndexHtml(['T1', 'GEN'], BASE_URL);
+      expect(html).toContain('<div id="result" class="visible"');
+    });
+
+    it('첫 팀이 KRX여도 동일 패턴 (T1 hardcode 아님)', () => {
+      const html = buildIndexHtml(['KRX', 'T1'], BASE_URL);
+      expect(html).toContain('<strong id="selected">KRX</strong>');
+      expect(html).toContain(`value="${BASE_URL}/krx.ics"`);
+    });
   });
 
   it('같은 입력이면 같은 출력 (순수성)', () => {
