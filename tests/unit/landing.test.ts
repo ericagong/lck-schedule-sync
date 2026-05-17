@@ -44,7 +44,7 @@ describe('buildIndexHtml — 정적 HTML 생성 (순수 함수)', () => {
     expect(html).toContain('navigator.clipboard.writeText');
   });
 
-  it('GitHub README 링크 포함 (구독 가이드 위임)', () => {
+  it('footer에 GitHub repo 링크', () => {
     const html = buildIndexHtml(LCK_TEAMS, BASE_URL);
     expect(html).toContain('https://github.com/ericagong/lck-schedule-sync');
   });
@@ -90,9 +90,67 @@ describe('buildIndexHtml — 정적 HTML 생성 (순수 함수)', () => {
       expect(html).toContain('💡');
     });
 
+    it('가이드 헤더에 이모지', () => {
+      expect(html).toContain('📲');
+    });
+
     it('footer에 GitHub·갱신 이모지', () => {
       expect(html).toContain('⭐ GitHub');
       expect(html).toContain('🔄');
+    });
+  });
+
+  describe('구독·개인화 가이드 (탭 — Google·Apple·Outlook·기타)', () => {
+    const html = buildIndexHtml(LCK_TEAMS, BASE_URL);
+
+    it('탭 4개 (Google·Apple·Outlook·삼성/Naver/카카오)', () => {
+      expect(html).toContain('data-target="google"');
+      expect(html).toContain('data-target="apple"');
+      expect(html).toContain('data-target="outlook"');
+      expect(html).toContain('data-target="other"');
+    });
+
+    it('Google이 기본 활성 탭', () => {
+      expect(html).toMatch(/<button class="tab active" data-target="google"/);
+      expect(html).toContain('<article class="panel active" id="google"');
+    });
+
+    it('Apple·Outlook·기타는 비활성 panel', () => {
+      expect(html).toContain('<article class="panel" id="apple"');
+      expect(html).toContain('<article class="panel" id="outlook"');
+      expect(html).toContain('<article class="panel" id="other"');
+    });
+
+    it('Google 가이드: 데스크톱 웹 단계 + 모바일 앱 자동 동기화 안내', () => {
+      expect(html).toContain('calendar.google.com');
+      expect(html).toContain('URL로 만들기');
+      expect(html).toContain('데스크톱 웹');
+    });
+
+    it('Google 가이드: 알림·색 변경 개인화 포함', () => {
+      expect(html).toContain('🔔 경기 시작 N분 전 알림');
+      expect(html).toContain('🎨 캘린더 색 변경');
+    });
+
+    it('Apple 가이드: macOS + iOS 별도 절차', () => {
+      expect(html).toContain('macOS');
+      expect(html).toContain('Safari');
+      expect(html).toContain('새로운 캘린더 구독');
+    });
+
+    it('Outlook 가이드: 웹 + 모바일 앱 안내', () => {
+      expect(html).toContain('outlook.live.com');
+      expect(html).toContain('인터넷에서 구독');
+    });
+
+    it('기타 (삼성·Naver·카카오): Google Calendar 경유 권장', () => {
+      expect(html).toContain('Google Calendar 경유');
+      expect(html).toContain('자동 갱신 안 됨');
+    });
+
+    it('탭 전환 JS 포함', () => {
+      expect(html).toContain("document.querySelectorAll('.tab')");
+      expect(html).toContain('dataset.target');
     });
   });
 });
