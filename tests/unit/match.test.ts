@@ -199,14 +199,14 @@ describe('toMatch — LCK 팀 displayName 도메인 표준 (Naver 표기 변화 
     expect(m?.teamA.code).toBe('GEN');
   });
 
-  it('KRX → DRX (2026 키움증권 후원 — code/display 분리)', () => {
+  it('KRX (2026 키움증권 후원 — Naver 응답 name 무시, 도메인 표준 적용)', () => {
     const m = toMatch(
       makeRaw({
         homeTeam: { name: '아무거나', nameEngAcronym: 'KRX' },
       }),
     );
     expect(m?.teamA.code).toBe('KRX');
-    expect(m?.teamA.displayName).toBe('DRX');
+    expect(m?.teamA.displayName).toBe('KRX');
   });
 
   it('Naver acronym이 소문자/공백 섞여 있어도 정규화 후 LCK 표준 적용', () => {
@@ -262,7 +262,7 @@ describe('Match 도메인 술어 + inline filter', () => {
     makeMatch({
       id: 'm2',
       teamA: { code: 'HLE', name: '한화생명' },
-      teamB: { code: 'KRX', name: 'DRX' },
+      teamB: { code: 'KRX', name: 'KRX' },
       startsAt: '2026-05-16T10:00:00.000Z',
       status: 'scheduled',
     }),

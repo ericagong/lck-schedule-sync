@@ -11,7 +11,7 @@ export const LCK_TEAMS = [
   'HLE',
   'DK',
   'KT',
-  'KRX', // 2026 키움증권 후원 (display: 'DRX')
+  'KRX', // 2026 키움증권 후원 — 팀명 자체가 KRX
   'BRO',
   'BFX',
   'NS',
@@ -27,7 +27,7 @@ export const LCK_TEAM_DISPLAY_NAME: Readonly<Record<LckTeamCode, string>> = {
   HLE: '한화생명',
   DK: '디플러스 기아',
   KT: 'KT',
-  KRX: 'DRX',
+  KRX: 'KRX',
   BRO: '한진 브리온',
   BFX: 'BNK 피어엑스',
   NS: '농심',
