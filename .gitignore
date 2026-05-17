@@ -5,8 +5,8 @@ dist/
 *.log
 .DS_Store
 
-# 빌드 산출물은 GitHub Actions가 직접 GitHub Pages로 배포하므로 git에 안 넣음
-public/*.ics
+# 빌드 산출물(.ics + index.html)은 GitHub Actions가 직접 GitHub Pages로 배포하므로 git에 안 넣음
+public/
 
 # pnpm 디버그 로그
 .pnpm-debug.log*
