@@ -7,9 +7,14 @@
  */
 
 import { z } from 'zod';
-import { Match, assertBestOf, type MatchStatus } from './match.js';
+import { Match, assertBestOf, type MatchScore, type MatchStatus } from './match.js';
 import { type League } from './league.js';
 import { LCK_TEAM_DISPLAY_NAME, type LckTeamCode, type Team } from './team.js';
+
+/** 외부 string → 닫힌 enum lookup. 미등록 키는 null. as 캐스팅 한 곳에 응집. */
+function lookup<V>(table: Readonly<Record<string, V>>, key: string): V | null {
+  return (table as Record<string, V>)[key] ?? null;
+}
 
 /* ─────────── Fetch 윈도우 ─────────── */
 
@@ -34,7 +39,7 @@ const NAVER_TO_LEAGUE = {
 type NaverTopLeagueId = keyof typeof NAVER_TO_LEAGUE;
 
 function toLeague(naverTopLeagueId: string): League | null {
-  return (NAVER_TO_LEAGUE as Record<string, League>)[naverTopLeagueId] ?? null;
+  return lookup(NAVER_TO_LEAGUE, naverTopLeagueId);
 }
 
 /** Naver nameEngAcronym → 도메인 LckTeamCode. */
@@ -52,7 +57,7 @@ const NAVER_TO_LCK_TEAM = {
 } as const satisfies Record<string, LckTeamCode>;
 
 function toLckCode(naverCode: string): LckTeamCode | null {
-  return (NAVER_TO_LCK_TEAM as Record<string, LckTeamCode>)[naverCode] ?? null;
+  return lookup(NAVER_TO_LCK_TEAM, naverCode);
 }
 
 function toMatchStatus(naverStatus: string): MatchStatus {
@@ -130,12 +135,12 @@ export function toMatch(raw: unknown): Match | null {
   });
 }
 
-type NaverMatchWithScore = z.infer<typeof NaverMatchSchema>;
-
-/** 완료 매치에만 점수 가짐 — 셋 다 있어야 score 객체 반환. */
-function toScore(
-  m: NaverMatchWithScore,
-): { home: number; away: number; winner: 'HOME' | 'AWAY' } | undefined {
+/** 완료 매치에만 점수 가짐 — 셋 다 있어야 MatchScore 반환. */
+function toScore(m: {
+  homeScore?: number | null;
+  awayScore?: number | null;
+  winner?: 'HOME' | 'AWAY' | null;
+}): MatchScore | undefined {
   if (m.homeScore == null || m.awayScore == null || !m.winner) return undefined;
   return { home: m.homeScore, away: m.awayScore, winner: m.winner };
 }
