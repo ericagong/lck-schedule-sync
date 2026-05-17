@@ -1,7 +1,7 @@
 name: Publish ICS
 
 on:
-  workflow_dispatch: # 수동 실행
+  workflow_dispatch:
   schedule:
     # 매일 2회 — 시간은 cron이 UTC 기준이므로 KST에서 빼야 함
     - cron: '0 19 * * *' # KST 새벽 04:00 (UTC 19:00 전날)
@@ -37,10 +37,8 @@ jobs:
       - name: Run full check (typecheck + lint + format + test)
         run: pnpm check
 
-      # 실패 시: 워크플로가 그대로 실패 → GitHub Actions 자동 알림.
-      # 기존 public/t1.ics는 갱신되지 않으므로 GitHub Pages는 마지막 성공본을
-      # 계속 서빙 — 사용자 캘린더에는 기존 매치가 유지되고 신규 매치만 lag.
-      - name: Generate t1.ics
+      # 실패 시 GitHub Pages는 마지막 성공본 유지 (사용자 캘린더 무손상, 신규 매치만 lag)
+      - name: Generate ICS files
         run: pnpm dev
 
       - name: Upload Pages artifact
@@ -59,9 +57,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v5
 
-  # build·deploy 둘 다 실패 시 issue 자동 생성 — GitHub 알림은 일회성이지만
-  # issue는 영구 기록 + 상태 관리 (해결 시 close). 매 실패마다 새 issue
-  # (cron 12h 주기라 빈번하지 않음 + 군주가 직접 close).
+  # 실패 시 issue 자동 생성 — 알림과 달리 영구 기록 + close로 상태 관리
   notify-on-failure:
     needs: [build, deploy]
     if: failure()
