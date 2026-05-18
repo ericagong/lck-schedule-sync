@@ -92,7 +92,9 @@ const NaverMatchSchema = z.object({
   // 매치 메타 (optional — 모든 매치에 있는 건 아님. 네이버는 누락 시 null 또는 0)
   homeScore: z.number().int().nonnegative().nullable().optional(),
   awayScore: z.number().int().nonnegative().nullable().optional(),
-  winner: z.enum(['HOME', 'AWAY']).nullable().optional(),
+  // 네이버는 예정 매치(BEFORE)에 'NONE'을 보냄 — 완료(RESULT)만 'HOME'/'AWAY'.
+  // 'NONE'을 enum에서 누락하면 zod parse 실패 → 모든 미래 매치 silent 누락.
+  winner: z.enum(['HOME', 'AWAY', 'NONE']).nullable().optional(),
   stadium: z.string().nullable().optional(),
   chzzkChannelId: z.string().nullable().optional(),
   replayVideoId: z.number().int().positive().nullable().optional(),
@@ -135,13 +137,14 @@ export function toMatch(raw: unknown): Match | null {
   });
 }
 
-/** 완료 매치에만 점수 가짐 — 셋 다 있어야 MatchScore 반환. */
+/** 완료 매치에만 점수 가짐 — 셋 다 있고 winner가 실제 팀일 때만 MatchScore 반환. */
 function toScore(m: {
   homeScore?: number | null;
   awayScore?: number | null;
-  winner?: 'HOME' | 'AWAY' | null;
+  winner?: 'HOME' | 'AWAY' | 'NONE' | null;
 }): MatchScore | undefined {
-  if (m.homeScore == null || m.awayScore == null || !m.winner) return undefined;
+  if (m.homeScore == null || m.awayScore == null) return undefined;
+  if (m.winner !== 'HOME' && m.winner !== 'AWAY') return undefined;
   return { home: m.homeScore, away: m.awayScore, winner: m.winner };
 }
 
