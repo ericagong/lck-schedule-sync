@@ -6,15 +6,23 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { generateIcs } from './ics.js';
+import { generateIcs, uidOf, type VeventMeta } from './ics.js';
 import { buildIndexHtml } from './landing.js';
 import type { Match } from './match.js';
 import { fetchAllMatches } from './naver.js';
+import {
+  computeContentHash,
+  decideSyncMeta,
+  parsePreviousIcs,
+  type PreviousSyncMap,
+} from './sync-meta.js';
 import { LCK_TEAM_DISPLAY_NAME, LCK_TEAMS, type LckTeamCode } from './team.js';
 
 const PUBLIC_DIR = resolve('public');
 const BASE_URL = 'https://ericagong.github.io/lck-teams-schedule';
 const LOG_PREFIX = '[lck-teams-schedule]';
+
+const EMPTY_PREVIOUS: PreviousSyncMap = new Map();
 
 const log = {
   info: (msg: string) => console.log(`${LOG_PREFIX} ${msg}`),
@@ -29,9 +37,48 @@ function calendarName(teamCode: LckTeamCode): string {
   return `${LCK_TEAM_DISPLAY_NAME[teamCode]} 경기 일정`;
 }
 
-async function publishTeamIcs(matches: readonly Match[], teamCode: LckTeamCode): Promise<number> {
+/**
+ * 직전 발행분 fetch — sync 메타 diff 입력. 404 / 네트워크 오류 / 비정상 응답 모두 cold start로
+ * fall through (모든 매치 SEQUENCE=0). 첫 발행 또는 GitHub Pages 일시 오류 케이스 흡수.
+ */
+async function fetchPreviousIcs(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      log.info(`previous ICS ${response.status} for ${url} — cold start`);
+      return null;
+    }
+    return await response.text();
+  } catch (err) {
+    log.info(`previous ICS fetch error for ${url}: ${String(err)} — cold start`);
+    return null;
+  }
+}
+
+async function publishTeamIcs(
+  matches: readonly Match[],
+  teamCode: LckTeamCode,
+  now: Date,
+): Promise<number> {
   const teamMatches = matches.filter((m) => m.involves(teamCode) && m.isActive);
-  const ics = generateIcs(teamMatches, { calendarName: calendarName(teamCode) });
+
+  const previousIcs = await fetchPreviousIcs(`${BASE_URL}/${icsFilename(teamCode)}`);
+  const previous = previousIcs ? parsePreviousIcs(previousIcs) : EMPTY_PREVIOUS;
+
+  const veventMetaByUid = new Map<string, VeventMeta>();
+  for (const m of teamMatches) {
+    const uid = uidOf(m);
+    const contentHash = computeContentHash(m);
+    const syncMeta = decideSyncMeta(uid, contentHash, previous, now);
+    veventMetaByUid.set(uid, { ...syncMeta, contentHash });
+  }
+
+  const ics = generateIcs(teamMatches, {
+    calendarName: calendarName(teamCode),
+    now,
+    veventMetaByUid,
+  });
   await writeFile(resolve(PUBLIC_DIR, icsFilename(teamCode)), ics, 'utf-8');
   return teamMatches.length;
 }
@@ -69,7 +116,7 @@ async function main(): Promise<void> {
   await mkdir(PUBLIC_DIR, { recursive: true });
 
   for (const teamCode of LCK_TEAMS) {
-    const count = await publishTeamIcs(matches, teamCode);
+    const count = await publishTeamIcs(matches, teamCode, now);
     log.info(`${count.toString().padStart(2)} ${teamCode.padEnd(4)} → ${icsFilename(teamCode)}`);
   }
 
