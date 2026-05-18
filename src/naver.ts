@@ -9,7 +9,7 @@
 import { z } from 'zod';
 import { Match, assertBestOf, type MatchScore, type MatchStatus } from './match.js';
 import { type League } from './league.js';
-import { LCK_TEAM_DISPLAY_NAME, type LckTeamCode, type Team } from './team.js';
+import { toTeam } from './team.js';
 
 /** 외부 string → 닫힌 enum lookup. 미등록 키는 null. as 캐스팅 한 곳에 응집. */
 function lookup<V>(table: Readonly<Record<string, V>>, key: string): V | null {
@@ -40,24 +40,6 @@ type NaverTopLeagueId = keyof typeof NAVER_TO_LEAGUE;
 
 function toLeague(naverTopLeagueId: string): League | null {
   return lookup(NAVER_TO_LEAGUE, naverTopLeagueId);
-}
-
-/** Naver nameEngAcronym → 도메인 LckTeamCode. */
-const NAVER_TO_LCK_TEAM = {
-  T1: 'T1',
-  GEN: 'GEN',
-  HLE: 'HLE',
-  DK: 'DK',
-  KT: 'KT',
-  KRX: 'KRX',
-  BRO: 'BRO',
-  BFX: 'BFX',
-  NS: 'NS',
-  DNS: 'DNS',
-} as const satisfies Record<string, LckTeamCode>;
-
-function toLckCode(naverCode: string): LckTeamCode | null {
-  return lookup(NAVER_TO_LCK_TEAM, naverCode);
 }
 
 function toMatchStatus(naverStatus: string): MatchStatus {
@@ -105,8 +87,6 @@ const NaverResponseSchema = z.object({
   content: z.object({ matches: z.array(z.unknown()) }).nullable(),
 });
 
-type NaverTeam = z.infer<typeof NaverTeamSchema>;
-
 /* ─────────── Translation — unknown → Match ─────────── */
 
 export function toMatch(raw: unknown): Match | null {
@@ -124,8 +104,8 @@ export function toMatch(raw: unknown): Match | null {
     id: `naver:${m.gameId}`,
     league,
     stage: m.title,
-    teamA: toTeam(m.homeTeam),
-    teamB: toTeam(m.awayTeam),
+    teamA: toTeam(m.homeTeam.nameEngAcronym, m.homeTeam.name),
+    teamB: toTeam(m.awayTeam.nameEngAcronym, m.awayTeam.name),
     startsAt: epochMsToIsoUtc(m.startDate),
     bestOf: m.maxMatchCount,
     status: toMatchStatus(m.matchStatus),
@@ -150,25 +130,6 @@ function toScore(m: {
 
 export function toMatches(raws: readonly unknown[]): Match[] {
   return raws.map(toMatch).filter((m): m is Match => m !== null);
-}
-
-function toTeam(raw: NaverTeam): Team {
-  const naverCode = raw.nameEngAcronym.trim().toUpperCase();
-  const lckCode = toLckCode(naverCode);
-
-  if (lckCode) {
-    // LCK 팀: 도메인 표준 사용 (Naver display 무시)
-    return {
-      code: lckCode,
-      displayName: LCK_TEAM_DISPLAY_NAME[lckCode],
-    };
-  }
-
-  // International: Naver 값 그대로 (열린 집합)
-  return {
-    code: naverCode,
-    displayName: raw.name.trim(),
-  };
 }
 
 function epochMsToIsoUtc(epochMs: number): string {
