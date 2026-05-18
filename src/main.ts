@@ -55,6 +55,17 @@ async function main(): Promise<void> {
     );
   }
 
+  // 미래 매치 0건이면 schema drift 의심 — RESULT만 통과하고 BEFORE는 모두 누락된 case
+  // (실제 발생 이력: winner='NONE' 신규 값을 enum에 미반영해 예정 매치 silent 누락).
+  // 휴식기에도 다음 split·국제대회 일정은 보통 미리 등록되어 0이면 비정상.
+  const now = new Date();
+  const futureCount = matches.filter((m) => m.startDate > now).length;
+  if (futureCount === 0) {
+    throw new Error(
+      'Suspicious: 0 future matches — schema drift 의심 (예정 매치가 모두 parse fail 가능성)',
+    );
+  }
+
   await mkdir(PUBLIC_DIR, { recursive: true });
 
   for (const teamCode of LCK_TEAMS) {

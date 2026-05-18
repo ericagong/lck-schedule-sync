@@ -1,6 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { getScheduleMonths } from '../../src/naver.js';
+import { getScheduleMonths, toMatch } from '../../src/naver.js';
 import { ALL_LEAGUES, LEAGUE_DISPLAY_NAME } from '../../src/league.js';
+
+/** 네이버 raw 매치 fixture — 필수 필드만. */
+function rawMatch(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    gameId: '2026052017nPNMH9y8539lol',
+    topLeagueId: 'lck',
+    title: '정규시즌 2R',
+    startDate: 1779264000000,
+    maxMatchCount: 3,
+    matchStatus: 'BEFORE',
+    winner: 'NONE',
+    homeScore: 0,
+    awayScore: 0,
+    stadium: '치지직 롤파크',
+    chzzkChannelId: '9381e7d6816e6d915a44a13c0195b202',
+    replayVideoId: null,
+    homeTeam: { name: 'T1', nameEngAcronym: 'T1' },
+    awayTeam: { name: 'KRX', nameEngAcronym: 'KRX' },
+    ...overrides,
+  };
+}
 
 describe('getScheduleMonths — rolling 5 month window (과거 3 + 현재 + 미래 1)', () => {
   it('항상 5개월 반환', () => {
@@ -41,6 +62,29 @@ describe('getScheduleMonths — rolling 5 month window (과거 3 + 현재 + 미�
     const a = getScheduleMonths(new Date(Date.UTC(2026, 4, 13, 0, 0, 0)));
     const b = getScheduleMonths(new Date(Date.UTC(2026, 4, 13, 23, 59, 59)));
     expect(a).toEqual(b);
+  });
+});
+
+describe('toMatch — winner 값 회귀 (네이버는 예정 매치에 NONE 응답)', () => {
+  it('예정 매치 winner="NONE"도 parse 통과 (silent 누락 회귀 방지)', () => {
+    const match = toMatch(rawMatch({ matchStatus: 'BEFORE', winner: 'NONE' }));
+    expect(match).not.toBeNull();
+    expect(match?.status).toBe('scheduled');
+    expect(match?.score).toBeUndefined(); // NONE → score 없음
+  });
+
+  it('완료 매치 winner="HOME"은 score 포함', () => {
+    const match = toMatch(
+      rawMatch({ matchStatus: 'RESULT', winner: 'HOME', homeScore: 2, awayScore: 0 }),
+    );
+    expect(match?.score).toEqual({ home: 2, away: 0, winner: 'HOME' });
+  });
+
+  it('완료 매치 winner="AWAY"도 score 포함', () => {
+    const match = toMatch(
+      rawMatch({ matchStatus: 'RESULT', winner: 'AWAY', homeScore: 1, awayScore: 2 }),
+    );
+    expect(match?.score).toEqual({ home: 1, away: 2, winner: 'AWAY' });
   });
 });
 
