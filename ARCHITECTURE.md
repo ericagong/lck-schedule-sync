@@ -1,8 +1,8 @@
-# LCK Schedule Sync — 아키텍처
+# LCK Teams Schedule — 아키텍처
 
-> T1 팬을 위한 LCK·국제 대회 매치 일정 자동 동기화 시스템. 외부 API에서 받은 LoL 매치 데이터를 `t1.ics` 캘린더 파일로 변환·배포한다.
+> LCK 팬을 위한 LCK·국제 대회 매치 일정 자동 동기화 시스템. 외부 API에서 받은 LoL 매치 데이터를 LCK 10팀별 `.ics` 캘린더 파일로 변환·배포한다.
 >
-> 결정·로드맵·운영 모범사례는 [`CLAUDE.md`](./CLAUDE.md). 이 문서는 **시스템이 어떻게 굴러가나**에 집중.
+> 결정·로드맵·운영 모범사례는 [`CLAUDE.md`](./CLAUDE.md)·[`DECISION_MAKING.md`](./DECISION_MAKING.md). 이 문서는 **시스템이 어떻게 굴러가나**에 집중.
 
 ## 1. 시스템 전체 흐름
 
@@ -84,24 +84,29 @@ flowchart TD
 
 ### 3.2 ③ generateIcs — RFC 5545 직조 (시작 시각 정렬 내장)
 
-| 변환                                   | 코드 위치                                        | 비고                                                                   |
-| -------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------- |
-| UTC compact 출력 (`Z` suffix)          | `ics.ts:formatUtcCompact`                        | 캘린더 앱이 사용자 로컬 timezone으로 자동 변환 (TZID·VTIMEZONE 불필요) |
-| DTEND 추정 (Bo1=+1h·Bo3=+3h·Bo5=+4.5h) | `match.ts:Match.endDate` (게터)                  | 도메인 응집 — API가 종료 시각 미제공 → 실측 기반 평균                  |
-| DTSTAMP 안정값                         | `match.startDate` 사용                           | 같은 매치 = 같은 DTSTAMP → cron 재발행 시 캘린더 "업데이트됨" 노이즈 0 |
-| SUMMARY · DESCRIPTION 본문             | `match.ts:Match.summary` / `.description` (게터) | 도메인 표현 응집 — ics.ts는 형식화만                                   |
-| `escapeText` + `foldLine`              | `ics.ts`                                         | RFC 5545: 콤마·세미콜론·줄바꿈 escape + UTF-8 75바이트 라인 폴딩       |
-| UID = `${match.id}@lck-teams-schedule` | `ics.ts:matchToVeventLines`                      | 멱등성 — 같은 매치 = 같은 UID → 캘린더 중복 없이 갱신                  |
+| 변환                                              | 코드 위치                                       | 비고                                                                                                |
+| ------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| UTC compact 출력 (`Z` suffix)                     | `utc-compact.ts:formatUtcCompact`               | 캘린더 앱이 사용자 로컬 timezone으로 자동 변환 (TZID·VTIMEZONE 불필요)                              |
+| DTEND 추정 (Bo* × 30분: Bo1=+30분·Bo3=+1.5h·Bo5=+2.5h) | `match.ts:Match.endDate` (게터)                 | 도메인 응집 — API가 종료 시각 미제공 → "한 게임 ≈ 30분" 가정                                       |
+| DTSTAMP = now (RFC §3.8.7.2)                      | `main.ts`가 빌드 시점 주입                      | 직렬화 시각, 매 발행 변동 — 변경 신호는 SEQUENCE로 분리 (DECISION_MAKING §4.8)                      |
+| CREATED · LAST-MODIFIED · SEQUENCE                | `ics.ts:matchToVeventLines` + `sync-meta.ts`    | 콘텐츠 변경 시에만 +1·now (이전 ICS의 X-CONTENT-HASH read해 매치별 diff)                            |
+| SUMMARY · DESCRIPTION 본문                        | `match.ts:summary` / `.description` (게터)      | 도메인 표현 응집 — ics.ts는 형식화만                                                                |
+| `escapeText` + `foldLine`                         | `ics.ts`                                        | RFC 5545: 콤마·세미콜론·줄바꿈 escape + UTF-8 75바이트 라인 폴딩 (URL-aware fold)                   |
+| UID = `${match.id}@lck-teams-schedule`            | `ics.ts:uidOf`                                  | 멱등성 — 같은 매치 = 같은 UID → 캘린더 중복 없이 갱신                                               |
 
-**변환 예시** (Match → VEVENT 핵심 라인):
+**변환 예시** (Match → VEVENT 핵심 라인, 완료 매치):
 
 ```
-Match { startsAt: '2026-04-08T10:00:00Z', bestOf: 3 }
+Match { startsAt: '2026-04-08T10:00:00Z', bestOf: 3, status: 'completed', ... }
   ↓
-DTSTART:20260408T100000Z   ← UTC compact, 캘린더가 로컬 timezone으로 자동 변환
-DTEND:20260408T130000Z     ← +3h (Bo3 평균)
-DTSTAMP:20260408T100000Z   ← 안정값 (= startsAt)
-SUMMARY:T1 vs 젠지 — LCK 정규시즌 2R (Bo3)
+DTSTAMP:20260518T014615Z       ← now (RFC 정의, 매 발행 변동)
+CREATED:20260408T100000Z       ← startDate (deterministic, 영구 동일)
+LAST-MODIFIED:20260518T014615Z ← 콘텐츠 변경 시각 (변경 없으면 이전값 유지)
+SEQUENCE:1                     ← 콘텐츠 변경 카운트
+DTSTART:20260408T100000Z       ← UTC compact
+DTEND:20260408T113000Z         ← +90분 (Bo3 × 30분)
+SUMMARY:[LCK] T1 vs 젠지       ← short code + matchup만
+DESCRIPTION:🎯 플레이오프 2R\n🎮 Bo3 (3판 2선승제)\n🏆 경기 결과: 1 vs 3 (젠지 승)\n🎬 다시보기: ...
 ```
 
 ---
@@ -113,23 +118,30 @@ SUMMARY:T1 vs 젠지 — LCK 정규시즌 2R (Bo3)
 ```ts
 interface NaverMatch {
   readonly gameId: string; // → "naver:${gameId}" UID
-  readonly topLeagueId: string; // → displayName 매핑 키 (응답 inline 없음)
-  readonly title: string; // → tournament.stage ("정규시즌 1R", "스위스 3R")
+  readonly topLeagueId: string; // → League enum 매핑 키 (응답 inline 없음)
+  readonly title: string; // → stage ("정규시즌 1R", "플레이오프 2R", "Road to EWC")
   readonly startDate: number; // epoch ms (UTC) → ISO 8601 변환
   readonly maxMatchCount: number; // → bestOf
   readonly matchStatus: string; // "BEFORE" | "RESULT" | "CANCEL"
   readonly homeTeam: { readonly name: string; readonly nameEngAcronym: string } | null;
   readonly awayTeam: { readonly name: string; readonly nameEngAcronym: string } | null;
+  // 매치 메타 (Phase 4)
+  readonly homeScore?: number | null;
+  readonly awayScore?: number | null;
+  readonly winner?: 'HOME' | 'AWAY' | 'NONE' | null;
+  readonly stadium?: string | null;
+  readonly chzzkChannelId?: string | null;
+  readonly replayVideoId?: number | null;
 }
 ```
 
-⚠️ **의식적으로 미사용**: 결과(score · winner · record) 필드 무시 → **스포일러 회피**. 이미 본 매치가 캘린더에서 결과 노출되지 않도록.
+⚠️ **매치 메타 포함 (Phase 4)**: 점수·승자·경기장·치지직 채널·다시보기 ID 모두 사용 — 이전 스포일러 회피 정책 폐기 (DECISION_MAKING §4.7).
 
-⚠️ **displayName 출처**: 네이버 응답에 사람이 읽을 league.name 필드는 없음 → `NAVER_LEAGUE_DISPLAY_NAMES` 매핑 테이블이 `topLeagueId`로 주입. 6 대회 한정이라 단순.
+⚠️ **League 매핑**: `NAVER_TO_LEAGUE` (`src/naver.ts`)이 `topLeagueId` → 도메인 `League` enum 변환. 6 대회 닫힌 집합. displayName은 `LEAGUE_DISPLAY_NAME`·`LEAGUE_SHORT_CODE` (`src/league.ts`)에서.
 
 ### 4.2 Match — 도메인 클래스
 
-`src/match.ts`. 8 readonly 필드 + 5 derived getter + ICS 출력 표현 게터 4개. 소스가 바뀌어도 이 모양이 변경 차단막.
+`src/match.ts`. 12 readonly 필드(8 핵심 + 4 매치 메타) + 도메인 술어·표현 게터. 소스가 바뀌어도 이 모양이 변경 차단막.
 
 ```ts
 class Match {
@@ -141,6 +153,11 @@ class Match {
   readonly startsAt: string; // ISO 8601 UTC
   readonly bestOf: 1 | 3 | 5;
   readonly status: 'scheduled' | 'completed' | 'canceled';
+  // 매치 메타 (Phase 4, optional)
+  readonly score?: MatchScore; // { home, away, winner } — 완료 매치만
+  readonly stadium?: string;
+  readonly chzzkChannelId?: string;
+  readonly replayVideoId?: number;
 
   // 도메인 술어
   get isActive(): boolean;
@@ -148,12 +165,11 @@ class Match {
 
   // 도메인 표현 (ICS 출력에 사용)
   get startDate(): Date;
-  get endDate(): Date; // startDate + Bo별 평균 길이
-  get matchup(): string; // "T1 vs 젠지"
-  get tournamentLabel(): string; // "LCK 정규시즌 2R"
-  get summary(): string; // "T1 vs 젠지 — LCK 정규시즌 2R (Bo3)"
-  get description(): string; // 여러 줄 본문
-  get streamUrl(): string;
+  get endDate(): Date; // startDate + Bo* × 30분
+  get summary(): string; // "[LCK] T1 vs 젠지" — short code + matchup
+  get description(): string; // 🎯 stage / 🎮 BoN / 🏆 결과 / 📺·🎬 시청 (이모지 일관)
+  get location(): string | undefined; // ICS LOCATION 필드 (캘린더 앱 Maps 연동)
+  get url(): string | null; // 완료=VOD, 예정=치지직 라이브
 }
 
 interface Team {
@@ -162,22 +178,29 @@ interface Team {
 }
 ```
 
-### 4.3 ICS VEVENT — 최종 출력
+### 4.3 ICS VEVENT — 최종 출력 (Phase 4 후속 3 형식)
 
 ```
 BEGIN:VEVENT
 UID:naver:2026050117ii8PCnB4429lol@lck-teams-schedule
-DTSTAMP:20260520T100000Z
+DTSTAMP:20260518T014615Z       ← now (RFC §3.8.7.2 정의, 매 발행 변동)
+CREATED:20260520T100000Z       ← startDate (deterministic)
+LAST-MODIFIED:20260518T014615Z ← 콘텐츠 변경 시각
+SEQUENCE:1                     ← 콘텐츠 변경 카운트 (DECISION_MAKING §4.8)
 DTSTART:20260520T100000Z
-DTEND:20260520T130000Z
-SUMMARY:T1 vs 젠지 — LCK 정규시즌 2R (Bo3)
-DESCRIPTION:T1 vs 젠지\nLCK — 정규시즌 2R\nBest of 3\n\n중계: https://lolesports.com/
+DTEND:20260520T113000Z         ← Bo3 = +90분
+SUMMARY:[LCK] T1 vs 젠지
+LOCATION:치지직 롤파크          ← 캘린더 앱이 자체 영역에 표시
+DESCRIPTION:🎯 정규시즌 2R\n🎮 Bo3 (3판 2선승제)\n🏆 경기 결과: 2 vs 0 (T1 승)\n🎬 다시보기: https://game.naver.com/.../999
 STATUS:CONFIRMED
-URL:https://lolesports.com/
+URL:https://game.naver.com/esports/League_of_Legends/videos/999
+X-CONTENT-HASH:84544cf3...4c46 ← 다음 빌드 diff 복원용 (비표준 X-property)
 END:VEVENT
 ```
 
-모든 시각이 UTC compact (`Z` suffix) — 캘린더 앱이 사용자 로컬 timezone으로 자동 변환. DTSTAMP는 `match.startDate`와 동일(안정값).
+모든 시각이 UTC compact (`Z` suffix) — 캘린더 앱이 사용자 로컬 timezone으로 자동 변환.
+
+**VCALENDAR 헤더 (요약)**: `VERSION:2.0` · `PRODID` · `CALSCALE:GREGORIAN` · `METHOD:PUBLISH` + `NAME`(RFC 7986) · `X-WR-CALNAME` · `REFRESH-INTERVAL;VALUE=DURATION:PT12H` · `X-PUBLISHED-TTL:PT12H` (cron 12h 정합).
 
 ### 4.4 iCalendar 구독 동기화 메커니즘
 
@@ -237,3 +260,15 @@ END:VEVENT
 - 네이버 burst rate limit (429) 발견 → 250ms throttle 추가
 - 네이버 lead time ~1개월 (현재월+1 데이터만 등록) → 미래 fetch 1개월로 축소
 - TBD 매치 fixture 269건 중 0건 — 네이버는 미정 매치 응답에 포함 X (parser 분기 불필요)
+
+### 5.3 Phase 4 (진행 중) — 10팀 다중 발행 + 매치 메타 풍부화 + 동기화 메타 정합 + SUMMARY/DESC 재설계
+
+| 항목                                    | 변경                                                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **10팀 다중 발행**                      | `main.ts`에 `LCK_TEAMS` loop 1개 + `landing.ts` 신규 (팀 선택 UI). 단일 fetch → 10팀 filter (네이버 호출 부담 무증가) |
+| **매치 메타 풍부화** (§4.7)             | `Match`에 score·stadium·chzzkChannelId·replayVideoId optional 필드 추가. `description` 게터가 status별 슬롯 조립    |
+| **동기화 메타 RFC 정합** (§4.8)         | `src/sync-meta.ts` 신규 — 이전 ICS의 X-CONTENT-HASH read → SHA-256 diff → SEQUENCE·LAST-MODIFIED 결정              |
+| **SUMMARY/DESC 재설계** (§4.9)          | `LEAGUE_SHORT_CODE` 신규, SUMMARY `[LCK] matchup`, DESC 이모지 일관 (🎯·🎮·🏆·📺·🎬)                                |
+| **SRP 리팩토링**                        | `landing.ts` 거대 함수 분리(STYLES·GUIDE_PANEL·SCRIPT 상수), 팀 변환 로직 `naver.ts → team.ts` 응집, `utc-compact.ts` 신규 |
+
+→ **본질**: 도메인 narrow waist 보상으로 ②~⑤ 무변경. `Match` 도메인 응집 + `sync-meta.ts`·`utc-compact.ts` 신규 모듈로 SRP 강화. 각 후속 결정의 _문제·근거·한계_는 DECISION_MAKING.md §4.7·§4.8·§4.9 참조.
