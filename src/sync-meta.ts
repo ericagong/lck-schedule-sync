@@ -13,6 +13,7 @@
 import { createHash } from 'node:crypto';
 
 import type { Match } from './match.js';
+import { parseUtcCompact } from './utc-compact.js';
 
 export type SyncMeta = {
   readonly sequence: number;
@@ -104,15 +105,6 @@ function readVeventEntry(
       lastModified,
     },
   };
-}
-
-/** YYYYMMDDTHHMMSSZ → Date. 형식 불일치면 null (안전 fallback). */
-function parseUtcCompact(value: string): Date | null {
-  const m = value.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
-  if (!m) return null;
-  const iso = `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`;
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 /**

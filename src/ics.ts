@@ -7,6 +7,7 @@
 
 import type { Match } from './match.js';
 import type { SyncMeta } from './sync-meta.js';
+import { formatUtcCompact } from './utc-compact.js';
 
 export type VeventMeta = SyncMeta & {
   readonly contentHash: string;
@@ -21,8 +22,6 @@ type IcsOptions = {
 };
 
 const PRODID = '-//lck-teams-schedule//KO';
-
-/** cron 12h 주기와 정합 — 클라이언트에 새로고침 hint. */
 const REFRESH_INTERVAL = 'PT12H';
 
 const UID_SUFFIX = '@lck-teams-schedule';
@@ -108,14 +107,6 @@ function foldLine(line: string): string {
   if (current.length > 0) chunks.push(current);
 
   return chunks.map((c, i) => (i === 0 ? c : ' ' + c)).join('\r\n');
-}
-
-/** YYYYMMDDTHHMMSSZ — RFC 5545 UTC compact 표현. */
-function formatUtcCompact(date: Date): string {
-  return date
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\.\d{3}/, '');
 }
 
 function buildCalendarHeader(options: IcsOptions): string[] {

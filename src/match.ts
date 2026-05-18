@@ -112,7 +112,6 @@ export class Match {
   }
 
   // e.g., "T1 vs 젠지 — LCK 1주 차 (Bo3)"
-  // e.g., "[LCK] T1 vs 젠지" — 대회는 bracket short code, stage·BoN은 DESCRIPTION으로.
   get summary(): string {
     const matchup = `${this.teamA.displayName} vs ${this.teamB.displayName}`;
     return `[${LEAGUE_SHORT_CODE[this.league]}] ${matchup}`;
