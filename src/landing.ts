@@ -3,6 +3,11 @@
  *
  * pure HTML + 인라인 CSS + vanilla JS. 외부 의존성 0.
  * 순수 함수 — 입력(teams, baseUrl)이 같으면 출력 동일.
+ *
+ * 구성:
+ *   - STYLES / GUIDE_PANEL / SCRIPT: 입력 무관 정적 콘텐츠 (모듈 상수)
+ *   - buildTeamButtons / buildResultPanel: 팀 목록·URL에 의존하는 동적 조각
+ *   - buildIndexHtml: 위 조각들을 조합한 최종 HTML
  */
 
 import { LCK_TEAM_DISPLAY_NAME, type LckTeamCode } from './team.js';
@@ -10,19 +15,9 @@ import { LCK_TEAM_DISPLAY_NAME, type LckTeamCode } from './team.js';
 const REPO_URL = 'https://github.com/ericagong/lck-teams-schedule';
 
 export function buildIndexHtml(teams: readonly LckTeamCode[], baseUrl: string): string {
-  // 첫 팀을 기본 선택 — 페이지 로드 직후 URL이 즉시 표시되어 자연스러운 진입
   const defaultTeam = teams[0];
   const defaultUrl = defaultTeam ? `${baseUrl}/${defaultTeam.toLowerCase()}.ics` : '';
   const defaultName = defaultTeam ? LCK_TEAM_DISPLAY_NAME[defaultTeam] : '';
-
-  const teamButtons = teams
-    .map((code, i) => {
-      const name = LCK_TEAM_DISPLAY_NAME[code];
-      const url = `${baseUrl}/${code.toLowerCase()}.ics`;
-      const activeClass = i === 0 ? ' active' : '';
-      return `      <button class="team${activeClass}" data-url="${escapeHtml(url)}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</button>`;
-    })
-    .join('\n');
 
   return `<!doctype html>
 <html lang="ko">
@@ -35,7 +30,77 @@ export function buildIndexHtml(teams: readonly LckTeamCode[], baseUrl: string): 
       content="LCK 팀별 일정을 자기 캘린더 앱에 자동 동기화하는 ICS 구독 피드."
     />
     <style>
-      * {
+${STYLES}
+    </style>
+  </head>
+  <body>
+    <h1>📅 LCK 팀 일정 캘린더</h1>
+    <p class="intro">
+      🎮 응원하는 팀을 선택하면 구독 URL이 나타납니다. 자기 캘린더 앱에 붙여넣어 자동
+      동기화하세요.
+    </p>
+
+    <div class="teams" role="list">
+${buildTeamButtons(teams, baseUrl)}
+    </div>
+
+${buildResultPanel(defaultTeam, defaultUrl, defaultName)}
+
+    <section class="guide">
+      <h2>📲 구독 방법 + 개인화</h2>
+${GUIDE_PANEL}
+    </section>
+
+    <div class="footer">
+      <a href="${REPO_URL}" target="_blank" rel="noopener">⭐ GitHub</a> · 🔄 매일 2회 (04:00 ·
+      23:00 KST) 자동 갱신 · 비영리·비상업
+    </div>
+
+    <script>
+${SCRIPT}
+    </script>
+  </body>
+</html>
+`;
+}
+
+/* ─────────── 동적 조각 (입력 의존) ─────────── */
+
+function buildTeamButtons(teams: readonly LckTeamCode[], baseUrl: string): string {
+  return teams
+    .map((code, i) => {
+      const name = LCK_TEAM_DISPLAY_NAME[code];
+      const url = `${baseUrl}/${code.toLowerCase()}.ics`;
+      const activeClass = i === 0 ? ' active' : '';
+      return `      <button class="team${activeClass}" data-url="${escapeHtml(url)}" data-name="${escapeHtml(name)}">${escapeHtml(name)}</button>`;
+    })
+    .join('\n');
+}
+
+function buildResultPanel(
+  defaultTeam: LckTeamCode | undefined,
+  defaultUrl: string,
+  defaultName: string,
+): string {
+  const visibleClass = defaultTeam ? ' class="visible"' : '';
+  return `    <div id="result"${visibleClass} aria-live="polite">
+      <p>🔗 <strong id="selected">${escapeHtml(defaultName)}</strong> 구독 URL:</p>
+      <div class="url-row">
+        <input
+          id="url"
+          readonly
+          aria-label="구독 URL"
+          value="${escapeHtml(defaultUrl)}"
+        />
+        <button id="copy" type="button">📋 복사</button>
+      </div>
+      <p class="hint">💡 위 URL을 복사하고, 아래 가이드에서 자기 캘린더 앱에 등록하세요.</p>
+    </div>`;
+}
+
+/* ─────────── 정적 상수 (입력 무관) ─────────── */
+
+const STYLES = `      * {
         box-sizing: border-box;
       }
       body {
@@ -205,37 +270,9 @@ export function buildIndexHtml(teams: readonly LckTeamCode[], baseUrl: string): 
       .footer a {
         color: #4285f4;
         text-decoration: none;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>📅 LCK 팀 일정 캘린더</h1>
-    <p class="intro">
-      🎮 응원하는 팀을 선택하면 구독 URL이 나타납니다. 자기 캘린더 앱에 붙여넣어 자동
-      동기화하세요.
-    </p>
+      }`;
 
-    <div class="teams" role="list">
-${teamButtons}
-    </div>
-
-    <div id="result"${defaultTeam ? ' class="visible"' : ''} aria-live="polite">
-      <p>🔗 <strong id="selected">${escapeHtml(defaultName)}</strong> 구독 URL:</p>
-      <div class="url-row">
-        <input
-          id="url"
-          readonly
-          aria-label="구독 URL"
-          value="${escapeHtml(defaultUrl)}"
-        />
-        <button id="copy" type="button">📋 복사</button>
-      </div>
-      <p class="hint">💡 위 URL을 복사하고, 아래 가이드에서 자기 캘린더 앱에 등록하세요.</p>
-    </div>
-
-    <section class="guide">
-      <h2>📲 구독 방법 + 개인화</h2>
-      <nav class="tabs" role="tablist" aria-label="캘린더 앱 선택">
+const GUIDE_PANEL = `      <nav class="tabs" role="tablist" aria-label="캘린더 앱 선택">
         <button class="tab active" data-target="google" role="tab" aria-selected="true">
           Google
         </button>
@@ -335,16 +372,9 @@ ${teamButtons}
           위 URL을 직접 다운로드해 한 번만 import 가능. 다만 <strong>자동 갱신 안 됨</strong> + 매
           갱신마다 중복 이벤트 쌓일 수 있음. 새 매치 추가될 때마다 수동 재import 필요.
         </p>
-      </article>
-    </section>
+      </article>`;
 
-    <div class="footer">
-      <a href="${REPO_URL}" target="_blank" rel="noopener">⭐ GitHub</a> · 🔄 매일 2회 (04:00 ·
-      23:00 KST) 자동 갱신 · 비영리·비상업
-    </div>
-
-    <script>
-      const result = document.getElementById('result');
+const SCRIPT = `      const result = document.getElementById('result');
       const urlInput = document.getElementById('url');
       const selected = document.getElementById('selected');
       const copyBtn = document.getElementById('copy');
@@ -390,12 +420,7 @@ ${teamButtons}
           tab.setAttribute('aria-selected', 'true');
           document.getElementById(target).classList.add('active');
         });
-      });
-    </script>
-  </body>
-</html>
-`;
-}
+      });`;
 
 function escapeHtml(text: string): string {
   return text

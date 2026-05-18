@@ -51,3 +51,20 @@ export function asLckTeam(raw: string): LckTeamCode {
   if (!isLckTeam(normalized)) throw new Error(`Not an LCK team: ${raw}`);
   return normalized;
 }
+
+/**
+ * 외부 raw (rawCode + rawDisplayName) → Team 도메인 변환.
+ *
+ * LCK 팀이면 도메인 표준 displayName 사용 (외부 표기 변화에 흔들림 X).
+ * International이면 외부 값 그대로 (열린 집합).
+ *
+ * 외부 fetcher(예: naver.ts)는 자기 raw 구조를 풀어 이 함수에 일반 문자열로 전달.
+ * 도메인 매핑 로직(LCK 감지·표준 적용)은 본 모듈 단독 책임 — 진실 공급처 단일화.
+ */
+export function toTeam(rawCode: string, rawDisplayName: string): Team {
+  const code = rawCode.trim().toUpperCase();
+  if (isLckTeam(code)) {
+    return { code, displayName: LCK_TEAM_DISPLAY_NAME[code] };
+  }
+  return { code, displayName: rawDisplayName.trim() };
+}
