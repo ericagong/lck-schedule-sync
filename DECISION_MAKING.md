@@ -388,6 +388,57 @@ END:VEVENT
 - **§4.6 부분 폐기**: 의사결정 진화 기록. 본 변경의 본질은 _목표는 같고 수단이 더 정확해진 것_.
 - **점수 정정 같은 cron 사이 다중 변경 정확 추적**: 한 cron 빌드 안에서 hash 비교는 1회. cron 사이에 매치가 두 번 변경되면 SEQUENCE는 1만 증가 (한 변경으로 합쳐짐). RFC 5545 의도("의미 있는 revision"=개정 단위)와 정합.
 
+### 4.9 SUMMARY/DESC 재설계 — bracket short code + 이모지 일관성 (2026-05-18)
+
+**문제**: 기존 SUMMARY `T1 vs BNK 피어엑스 — LCK 플레이오프 2R (Bo5)`는 (a) 한국어 LEAGUE_DISPLAY_NAME(`월드 챔피언십`·`First Stand`·`KeSPA Cup`)이 SUMMARY에 들어가면 모바일 그리드 잘림 위험, (b) DESCRIPTION에 matchup·tournament 중복, (c) 이모지가 일부 행에만 있어 시각 일관성 X, (d) LOCATION 정보가 DESC와 LOCATION 필드 양쪽 중복.
+
+**대안**:
+
+- a. 현 상태 유지 (SUMMARY 길고 DESC self-contained)
+- b. matchup만 DESC에서 제거
+- c. matchup·tournament 모두 제거 + SUMMARY 재설계 + 이모지 일관 ← **선택**
+
+**선택**: c — SUMMARY를 `[SHORT_CODE] matchup`으로 좁히고 stage·BoN·결과·시청은 DESC, 위치는 LOCATION 필드만.
+
+**근거**:
+
+1. **SUMMARY는 한 줄 식별 본질** — 매치업 + 대회만으로 충분. stage·BoN은 펼침 가치 정보
+2. **그리드 잘림 안전** — `LEAGUE_SHORT_CODE` (`LCK / MSI / WORLDS / FST / EWC / KESPA`) 5자 이하 통일
+3. **DESC 이모지 일관성** — 모든 행에 이모지 prefix (`🎯 stage / 🎮 BoN / 🏆 결과 / 📺·🎬 시청`)
+4. **SRP 명확화** — LOCATION은 LOCATION 필드 단독 책임 (Google·Apple·Outlook 모두 자체 영역 표시)
+5. **matchup·tournament 중복 제거** — SUMMARY와 1:1 중복은 펼침 시 노이즈
+
+**구현 — `src/league.ts` + `src/match.ts`**:
+
+```ts
+// league.ts 신규
+export const LEAGUE_SHORT_CODE: Readonly<Record<League, string>> = {
+  LCK: 'LCK', MSI: 'MSI', WORLDS: 'WORLDS',
+  FIRST_STAND: 'FST', EWC: 'EWC', KESPA_CUP: 'KESPA',
+};
+
+// match.ts
+get summary(): string {
+  return `[${LEAGUE_SHORT_CODE[this.league]}] ${matchup}`;
+}
+
+get description(): string {
+  return [stageText(), bestOfText(), scoreText(), streamText()]
+    .filter(...).join('\n');
+}
+```
+
+**미세 결정**:
+
+- **EWC 시각적 중복 허용**: raw title `Road to EWC X`가 league명 포함 → SUMMARY `[EWC]` + DESC `🎯 Road to EWC X`. 한 번뿐인 중복, raw 표기 보존이 우선 (`Road to`는 "EWC 진출 경합"이라는 의미 자체가 정보)
+- **stage 부재 시 🎯 행 생략**: stage가 빈 문자열인 케이스 안전 처리
+- **LEAGUE_DISPLAY_NAME 유지**: 도메인 표준 한국어명, landing page·다른 용도 보존
+
+**한계**:
+
+- **SUMMARY로 결승 식별 약화**: 정규시즌·결승 SUMMARY 동일 형식. 다만 결승은 Bo5(150분)라 그리드 블록 크기로 자연 강조
+- **첫 적용 SEQUENCE 일제 +1**: SUMMARY/DESC 변경으로 X-CONTENT-HASH 일제 변경 → 모든 매치 SEQUENCE+1 1회 발생. §4.8 자연 동작, 1회성 노이즈
+
 ---
 
 ## 5. 도메인 모델 — Match를 narrow waist로

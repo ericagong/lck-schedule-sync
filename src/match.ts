@@ -5,7 +5,7 @@
  * 이 모듈을 알지만, 이 모듈은 그들을 모름.
  */
 
-import { LEAGUE_DISPLAY_NAME, type League } from './league.js';
+import { LEAGUE_SHORT_CODE, type League } from './league.js';
 import type { Team } from './team.js';
 
 export type BestOf = 1 | 3 | 5;
@@ -112,33 +112,31 @@ export class Match {
   }
 
   // e.g., "T1 vs 젠지 — LCK 1주 차 (Bo3)"
+  // e.g., "[LCK] T1 vs 젠지" — 대회는 bracket short code, stage·BoN은 DESCRIPTION으로.
   get summary(): string {
     const matchup = `${this.teamA.displayName} vs ${this.teamB.displayName}`;
-    return `${matchup} — ${this.tournamentLabel()} (Bo${this.bestOf})`;
+    return `[${LEAGUE_SHORT_CODE[this.league]}] ${matchup}`;
   }
 
-  /** LOCATION 필드용 — 네이버 stadium 그대로. */
+  /** LOCATION 필드용 — 네이버 stadium 그대로. ICS LOCATION 필드만 사용, DESCRIPTION엔 중복 X. */
   get location(): string | undefined {
     return this.stadium;
   }
 
   /**
-   * 여러 줄 본문 — 어떤 정보가 들어가는지 한눈에 보이게 7개 슬롯으로 구성.
-   * 매치업 / 대회·스테이지 / 형식 / 결과(완료만) / 빈 줄 / 위치 / 중계 링크
-   * null인 슬롯은 출력에서 빠짐.
+   * 캘린더 펼침 시 보강 정보 — SUMMARY로 표현 못 한 것만.
+   * 매치업·대회(short code)·위치는 SUMMARY 또는 LOCATION 필드 책임이라 제외.
+   * 모든 행에 이모지 prefix로 시각 일관성 유지.
+   *
+   *   - 🎯 stage (모든 매치, raw 네이버 표기) — e.g. `🎯 플레이오프 2R`, `🎯 결승`
+   *   - 🎮 형식 (모든 매치)
+   *   - 🏆 경기 결과 (완료만)
+   *   - 📺 라이브 (예정만) / 🎬 다시보기 (완료만)
    */
   get description(): string {
-    const matchup = `${this.teamA.displayName} vs ${this.teamB.displayName}`;
-    const tournament = this.tournamentLabel();
-    const format = BEST_OF_LABEL[this.bestOf];
-    const result = this.scoreText();
-    const location = this.stadium ? `📍 ${this.stadium}` : null;
-    const stream = this.streamText();
-
-    return [matchup, tournament, format, result, '', location, stream]
+    return [this.stageText(), this.bestOfText(), this.scoreText(), this.streamText()]
       .filter((line): line is string => line !== null)
-      .join('\n')
-      .trimEnd();
+      .join('\n');
   }
 
   /** ICS URL property용 — 상태별 가장 의미 있는 링크 (완료=VOD, 예정=라이브). */
@@ -149,13 +147,12 @@ export class Match {
   /* ─────────── 내부 헬퍼 ─────────── */
 
   /**
-   * "LCK 1주 차" / "Road to EWC 1R" — 도메인 표시명이 stage에 이미 포함되어 있으면
-   * prefix를 생략해 중복(예: "EWC Road to EWC ...") 회피.
+   * stage 한 줄 — 네이버 raw title 그대로(`플레이오프 2R`·`결승`·`Road to EWC 2R` 등).
+   * stage 부재 시 행 자체 생략. EWC raw가 league명을 포함하는 케이스는 한 번뿐인
+   * 시각적 중복(SUMMARY `[EWC]` + DESC `🎯 Road to EWC 2R`)이라 허용.
    */
-  private tournamentLabel(): string {
-    const leagueName = LEAGUE_DISPLAY_NAME[this.league];
-    if (!this.stage) return leagueName;
-    return this.stage.includes(leagueName) ? this.stage : `${leagueName} ${this.stage}`;
+  private stageText(): string | null {
+    return this.stage ? `🎯 ${this.stage}` : null;
   }
 
   private chzzkLiveUrl(): string | null {
@@ -173,12 +170,17 @@ export class Match {
       : null;
   }
 
+  /** 형식 한 줄 — `🎮 Bo5 (5판 3선승제)` (영문 단축 + 한국어 풀이). */
+  private bestOfText(): string {
+    return `🎮 Bo${this.bestOf} (${BEST_OF_LABEL[this.bestOf]})`;
+  }
+
   /** 완료 매치 점수·승자 한 줄. */
   private scoreText(): string | null {
     if (!this.score) return null;
     const winnerName =
       this.score.winner === 'HOME' ? this.teamA.displayName : this.teamB.displayName;
-    return `경기 결과: ${this.score.home} vs ${this.score.away} (${winnerName} 승)`;
+    return `🏆 경기 결과: ${this.score.home} vs ${this.score.away} (${winnerName} 승)`;
   }
 
   /** 예정 → 치지직 라이브 / 완료 → 네이버 e스포츠 다시보기 / 취소 → 없음. */

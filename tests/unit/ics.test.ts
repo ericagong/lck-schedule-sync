@@ -92,26 +92,30 @@ describe('generateIcs', () => {
     expect(ics([bo5])).toContain('DTEND:20260408T123000Z');
   });
 
-  it('SUMMARY에 한국어 팀명을 포함한다', () => {
-    expect(ics([sampleMatch])).toContain('SUMMARY:T1 vs 젠지 — LCK 2주 차 (Bo3)');
+  it('SUMMARY는 [SHORT_CODE] matchup 형식 (stage·BoN은 DESC)', () => {
+    expect(ics([sampleMatch])).toContain('SUMMARY:[LCK] T1 vs 젠지');
   });
 
-  it('SUMMARY에 플레이오프 stage를 표시한다', () => {
-    expect(ics([makeMatch({ stage: '플레이오프', bestOf: 5 })])).toContain(
-      'SUMMARY:T1 vs 젠지 — LCK 플레이오프 (Bo5)',
-    );
+  it('LCK·MSI·EWC: SHORT_CODE = LEAGUE_DISPLAY_NAME 동일', () => {
+    expect(ics([makeMatch({ league: 'LCK' })])).toContain('SUMMARY:[LCK] T1 vs 젠지');
+    expect(ics([makeMatch({ league: 'MSI' })])).toContain('SUMMARY:[MSI] T1 vs 젠지');
+    expect(ics([makeMatch({ league: 'EWC' })])).toContain('SUMMARY:[EWC] T1 vs 젠지');
   });
 
-  it('SUMMARY에 결승 stage를 표시한다', () => {
-    expect(ics([makeMatch({ stage: '결승', bestOf: 5 })])).toContain(
-      'SUMMARY:T1 vs 젠지 — LCK 결승 (Bo5)',
-    );
+  it('WORLDS·FIRST_STAND·KESPA_CUP: 긴 한국어 표기 대신 짧은 영문 코드 ([WORLDS]·[FST]·[KESPA])', () => {
+    expect(ics([makeMatch({ league: 'WORLDS' })])).toContain('SUMMARY:[WORLDS] T1 vs 젠지');
+    expect(ics([makeMatch({ league: 'FIRST_STAND' })])).toContain('SUMMARY:[FST] T1 vs 젠지');
+    expect(ics([makeMatch({ league: 'KESPA_CUP' })])).toContain('SUMMARY:[KESPA] T1 vs 젠지');
   });
 
-  it('SUMMARY에 플레이-인 stage를 표시한다', () => {
-    expect(ics([makeMatch({ stage: '플레이-인', bestOf: 3 })])).toContain(
-      'SUMMARY:T1 vs 젠지 — LCK 플레이-인 (Bo3)',
-    );
+  it('stage·BoN은 SUMMARY가 아닌 DESCRIPTION에 표시', () => {
+    const result = ics([makeMatch({ stage: '플레이오프 2R', bestOf: 5 })]);
+    expect(result).toContain('SUMMARY:[LCK] T1 vs 젠지');
+    expect(result).not.toMatch(/SUMMARY:[^\r\n]*플레이오프/);
+    expect(result).not.toMatch(/SUMMARY:[^\r\n]*Bo5/);
+    const unfolded = result.replace(/\r\n /g, '');
+    expect(unfolded).toContain('🎯 플레이오프 2R');
+    expect(unfolded).toContain('🎮 Bo5 (5판 3선승제)');
   });
 
   it('canceled 매치는 STATUS:CANCELLED', () => {
@@ -248,19 +252,22 @@ describe('generateIcs', () => {
 
   // 한국어 1글자 = UTF-8 3바이트. 75바이트 경계에서 문자 중간 깨지면 ICS 손상.
   describe('RFC 5545 line folding', () => {
-    const longKoreanMatch = makeMatch({
+    // SUMMARY가 짧아진 새 형식([LCK] T1 vs 젠지)에선 SUMMARY 자체 폴딩이 드물어,
+    // 길이 보장을 위해 long stage(DESCRIPTION 행)로 폴딩 시나리오 구성.
+    const longStageMatch = makeMatch({
       league: 'WORLDS',
-      stage: '플레이오프 라운드 1 매치 1',
+      stage: '플레이오프 라운드 1 매치 1 — 그룹 A vs 그룹 B 매치',
       bestOf: 5,
     });
 
-    it('75바이트 초과 SUMMARY는 CRLF + 1칸 들여쓰기로 폴딩', () => {
-      const result = ics([longKoreanMatch]);
-      expect(result).toMatch(/SUMMARY:[^\r\n]+\r\n [^\r\n]/);
+    it('75바이트 초과 라인은 CRLF + 1칸 들여쓰기로 폴딩', () => {
+      const result = ics([longStageMatch]);
+      // DESCRIPTION 안에 긴 stage가 포함되어 폴딩 발생
+      expect(result).toMatch(/\r\n [^\r\n]/);
     });
 
     it('폴딩 후에도 모든 라인이 75바이트 이하', () => {
-      const result = ics([longKoreanMatch]);
+      const result = ics([longStageMatch]);
       const encoder = new TextEncoder();
       for (const line of result.split('\r\n')) {
         expect(encoder.encode(line).length).toBeLessThanOrEqual(75);
@@ -268,17 +275,16 @@ describe('generateIcs', () => {
     });
 
     it('폴딩 시 한국어 멀티바이트 문자가 깨지지 않음', () => {
-      const result = ics([longKoreanMatch]);
+      const result = ics([longStageMatch]);
       expect(result).not.toContain('�');
       const unfolded = result.replace(/\r\n /g, '');
-      expect(unfolded).toContain(
-        'SUMMARY:T1 vs 젠지 — 월드 챔피언십 플레이오프 라운드 1 매치 1 (Bo5)',
-      );
+      expect(unfolded).toContain('🎯 플레이오프 라운드 1 매치 1 — 그룹 A vs 그룹 B 매치');
     });
 
     it('75바이트 이하 라인은 폴딩하지 않는다', () => {
       const result = ics([sampleMatch]);
-      expect(result).toMatch(/SUMMARY:T1 vs 젠지 — LCK 2주 차 \(Bo3\)\r\nDESCRIPTION:/);
+      // 짧은 SUMMARY는 한 줄에 들어감 (sampleMatch는 stadium 없어 다음 라인이 DESCRIPTION)
+      expect(result).toMatch(/SUMMARY:\[LCK\] T1 vs 젠지\r\nDESCRIPTION/);
     });
 
     // 일부 캘린더 앱은 fold된 URL을 unfold하지 않고 자동 링크화 정규식을 돌리기 때문에
@@ -321,7 +327,7 @@ describe('VEVENT 블록 구조', () => {
     expect(result).toContain('SEQUENCE:0');
     expect(result).toContain('DTSTART:20260408T100000Z');
     expect(result).toContain('DTEND:20260408T113000Z');
-    expect(result).toContain('SUMMARY:T1 vs 젠지 — LCK 2주 차 (Bo3)');
+    expect(result).toContain('SUMMARY:[LCK] T1 vs 젠지');
     expect(result).toContain('STATUS:CONFIRMED');
   });
 

@@ -17,3 +17,17 @@ export const LEAGUE_DISPLAY_NAME: Readonly<Record<League, string>> = {
   EWC: 'EWC',
   KESPA_CUP: 'KeSPA Cup',
 };
+
+/**
+ * SUMMARY bracket 표기용 영문 short code — `[LCK] T1 vs 젠지` 패턴.
+ * LEAGUE_DISPLAY_NAME이 길 수 있어(`월드 챔피언십`·`First Stand`·`KeSPA Cup`)
+ * 모바일 캘린더 그리드 잘림 회피 위해 5자 이하로 통일.
+ */
+export const LEAGUE_SHORT_CODE: Readonly<Record<League, string>> = {
+  LCK: 'LCK',
+  MSI: 'MSI',
+  WORLDS: 'WORLDS',
+  FIRST_STAND: 'FST',
+  EWC: 'EWC',
+  KESPA_CUP: 'KESPA',
+};

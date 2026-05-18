@@ -350,24 +350,29 @@ describe('Match — ICS 출력 표현 (도메인 응집)', () => {
     });
   });
 
-  describe('summary: "matchup — tournamentLabel (BoN)"', () => {
-    it('정규시즌 Bo3', () => {
-      expect(makeMatch().summary).toBe('T1 vs 젠지 — LCK 1주 차 (Bo3)');
+  describe('summary: "[SHORT_CODE] matchup"', () => {
+    it('LCK 정규시즌', () => {
+      expect(makeMatch().summary).toBe('[LCK] T1 vs 젠지');
     });
-    it('결승 Bo5', () => {
-      expect(makeMatch({ stage: '결승', bestOf: 5 }).summary).toBe('T1 vs 젠지 — LCK 결승 (Bo5)');
+    it('LCK 결승 (stage 무관, SUMMARY는 league + matchup만)', () => {
+      expect(makeMatch({ stage: '결승', bestOf: 5 }).summary).toBe('[LCK] T1 vs 젠지');
     });
-    it('stage 없을 때 display명만', () => {
+    it('WORLDS → bracket [WORLDS]', () => {
+      expect(makeMatch({ league: 'WORLDS', stage: '결승', bestOf: 5 }).summary).toBe(
+        '[WORLDS] T1 vs 젠지',
+      );
+    });
+    it('stage 없어도 SUMMARY 형식 동일', () => {
       expect(makeMatch({ league: 'WORLDS', stage: '', bestOf: 5 }).summary).toBe(
-        'T1 vs 젠지 — 월드 챔피언십 (Bo5)',
+        '[WORLDS] T1 vs 젠지',
       );
     });
   });
 
   describe('description: 상태별 본문 (예정/완료/취소)', () => {
-    it('예정 매치 (메타 없음): 매치업·대회·BoN한국어만, 빈 줄 trailing 없음', () => {
+    it('예정 매치 (메타 없음): 🎯 stage + 🎮 BoN', () => {
       const desc = makeMatch({ status: 'scheduled' }).description;
-      expect(desc).toBe(['T1 vs 젠지', 'LCK 1주 차', '3판 2선승제'].join('\n'));
+      expect(desc).toBe(['🎯 1주 차', '🎮 Bo3 (3판 2선승제)'].join('\n'));
     });
 
     it('예정 매치 + 치지직 채널: 라이브 링크 표시', () => {
@@ -379,13 +384,13 @@ describe('Match — ICS 출력 표현 (도메인 응집)', () => {
       expect(desc).not.toContain('lolesports');
     });
 
-    it('완료 매치 + 점수 + replayVideoId: 결과 + 다시보기 (라이브 X)', () => {
+    it('완료 매치 + 점수 + replayVideoId: 🏆 결과 + 🎬 다시보기 (라이브 X)', () => {
       const desc = makeMatchWithMeta({
         status: 'completed',
         score: { home: 2, away: 0, winner: 'HOME' },
         replayVideoId: 999,
       }).description;
-      expect(desc).toContain('경기 결과: 2 vs 0 (T1 승)');
+      expect(desc).toContain('🏆 경기 결과: 2 vs 0 (T1 승)');
       expect(desc).toContain(
         '🎬 다시보기: https://game.naver.com/esports/League_of_Legends/videos/999',
       );
@@ -398,35 +403,41 @@ describe('Match — ICS 출력 표현 (도메인 응집)', () => {
         status: 'completed',
         score: { home: 1, away: 2, winner: 'AWAY' },
       }).description;
-      expect(desc).toContain('경기 결과: 1 vs 2 (젠지 승)');
+      expect(desc).toContain('🏆 경기 결과: 1 vs 2 (젠지 승)');
     });
 
-    it('취소 매치: 위치만 (중계·결과·다시보기 모두 X)', () => {
+    it('취소 매치: 🎯 stage + 🎮 BoN만 (중계·결과·다시보기 모두 X)', () => {
       const desc = makeMatchWithMeta({ status: 'canceled', stadium: '치지직 롤파크' }).description;
-      expect(desc).toContain('📍 치지직 롤파크');
+      expect(desc).toBe(['🎯 1주 차', '🎮 Bo3 (3판 2선승제)'].join('\n'));
       expect(desc).not.toContain('📺');
       expect(desc).not.toContain('🎬');
-      expect(desc).not.toContain('경기 결과');
+      expect(desc).not.toContain('🏆');
     });
 
-    it('LOCATION 데이터 있으면 📍 행 추가', () => {
+    it('LOCATION 정보는 DESCRIPTION에 미포함 (ICS LOCATION 필드 책임)', () => {
       const desc = makeMatchWithMeta({ stadium: '치지직 롤파크' }).description;
-      expect(desc).toContain('📍 치지직 롤파크');
-    });
-
-    it('LOCATION 데이터 없으면 📍 행 누락', () => {
-      const desc = makeMatchWithMeta({ stadium: undefined }).description;
       expect(desc).not.toContain('📍');
+      expect(desc).not.toContain('치지직 롤파크');
     });
 
-    it('월드 결승 Bo5: 한국어 본문', () => {
-      const desc = makeMatch({ league: 'WORLDS', stage: '결승', bestOf: 5 }).description;
-      expect(desc).toContain('월드 챔피언십 결승');
-      expect(desc).toContain('5판 3선승제');
+    it('stage 부재 시 🎯 행 자체 생략', () => {
+      const noStage = Match.create({
+        id: 'naver:n1',
+        league: 'WORLDS',
+        stage: '',
+        teamA: { code: 'T1', displayName: 'T1' },
+        teamB: { code: 'GEN', displayName: '젠지' },
+        startsAt: '2026-05-15T10:00:00.000Z',
+        bestOf: 5,
+        status: 'scheduled',
+      });
+      expect(noStage.description).toBe('🎮 Bo5 (5판 3선승제)');
+      expect(noStage.description).not.toContain('🎯');
     });
 
-    // EWC raw title이 이미 "Road to EWC 1R" 형태로 도메인명을 포함 → "EWC Road to EWC ..." 중복 회피.
-    it('EWC: stage가 leagueName 포함하면 prefix 생략 (중복 회피)', () => {
+    // EWC raw title이 이미 "Road to EWC 1R" 형태로 league명을 포함 → SUMMARY [EWC] +
+    // DESC '🎯 Road to EWC 1R' 시각적 중복 발생하지만 한 번뿐이라 허용. raw 표기 보존이 우선.
+    it('EWC: SUMMARY는 [EWC] matchup만, DESC는 raw stage 그대로 (중복 허용)', () => {
       const ewc = Match.create({
         id: 'naver:e1',
         league: 'EWC',
@@ -437,8 +448,8 @@ describe('Match — ICS 출력 표현 (도메인 응집)', () => {
         bestOf: 3,
         status: 'scheduled',
       });
-      expect(ewc.summary).toBe('T1 vs 젠지 — Road to EWC 1R (Bo3)');
-      expect(ewc.description.split('\n')[1]).toBe('Road to EWC 1R');
+      expect(ewc.summary).toBe('[EWC] T1 vs 젠지');
+      expect(ewc.description.split('\n')[0]).toBe('🎯 Road to EWC 1R');
     });
   });
 
