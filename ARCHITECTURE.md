@@ -84,15 +84,15 @@ flowchart TD
 
 ### 3.2 ③ generateIcs — RFC 5545 직조 (시작 시각 정렬 내장)
 
-| 변환                                              | 코드 위치                                       | 비고                                                                                                |
-| ------------------------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| UTC compact 출력 (`Z` suffix)                     | `utc-compact.ts:formatUtcCompact`               | 캘린더 앱이 사용자 로컬 timezone으로 자동 변환 (TZID·VTIMEZONE 불필요)                              |
-| DTEND 추정 (Bo* × 30분: Bo1=+30분·Bo3=+1.5h·Bo5=+2.5h) | `match.ts:Match.endDate` (게터)                 | 도메인 응집 — API가 종료 시각 미제공 → "한 게임 ≈ 30분" 가정                                       |
-| DTSTAMP = now (RFC §3.8.7.2)                      | `main.ts`가 빌드 시점 주입                      | 직렬화 시각, 매 발행 변동 — 변경 신호는 SEQUENCE로 분리 (DECISION_MAKING §4.8)                      |
-| CREATED · LAST-MODIFIED · SEQUENCE                | `ics.ts:matchToVeventLines` + `sync-meta.ts`    | 콘텐츠 변경 시에만 +1·now (이전 ICS의 X-CONTENT-HASH read해 매치별 diff)                            |
-| SUMMARY · DESCRIPTION 본문                        | `match.ts:summary` / `.description` (게터)      | 도메인 표현 응집 — ics.ts는 형식화만                                                                |
-| `escapeText` + `foldLine`                         | `ics.ts`                                        | RFC 5545: 콤마·세미콜론·줄바꿈 escape + UTF-8 75바이트 라인 폴딩 (URL-aware fold)                   |
-| UID = `${match.id}@lck-teams-schedule`            | `ics.ts:uidOf`                                  | 멱등성 — 같은 매치 = 같은 UID → 캘린더 중복 없이 갱신                                               |
+| 변환                                                    | 코드 위치                                    | 비고                                                                              |
+| ------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------- |
+| UTC compact 출력 (`Z` suffix)                           | `utc-compact.ts:formatUtcCompact`            | 캘린더 앱이 사용자 로컬 timezone으로 자동 변환 (TZID·VTIMEZONE 불필요)            |
+| DTEND 추정 (Bo\* × 30분: Bo1=+30분·Bo3=+1.5h·Bo5=+2.5h) | `match.ts:Match.endDate` (게터)              | 도메인 응집 — API가 종료 시각 미제공 → "한 게임 ≈ 30분" 가정                      |
+| DTSTAMP = now (RFC §3.8.7.2)                            | `main.ts`가 빌드 시점 주입                   | 직렬화 시각, 매 발행 변동 — 변경 신호는 SEQUENCE로 분리 (DECISION_MAKING §4.8)    |
+| CREATED · LAST-MODIFIED · SEQUENCE                      | `ics.ts:matchToVeventLines` + `sync-meta.ts` | 콘텐츠 변경 시에만 +1·now (이전 ICS의 X-CONTENT-HASH read해 매치별 diff)          |
+| SUMMARY · DESCRIPTION 본문                              | `match.ts:summary` / `.description` (게터)   | 도메인 표현 응집 — ics.ts는 형식화만                                              |
+| `escapeText` + `foldLine`                               | `ics.ts`                                     | RFC 5545: 콤마·세미콜론·줄바꿈 escape + UTF-8 75바이트 라인 폴딩 (URL-aware fold) |
+| UID = `${match.id}@lck-teams-schedule`                  | `ics.ts:uidOf`                               | 멱등성 — 같은 매치 = 같은 UID → 캘린더 중복 없이 갱신                             |
 
 **변환 예시** (Match → VEVENT 핵심 라인, 완료 매치):
 
@@ -263,12 +263,12 @@ END:VEVENT
 
 ### 5.3 Phase 4 (진행 중) — 10팀 다중 발행 + 매치 메타 풍부화 + 동기화 메타 정합 + SUMMARY/DESC 재설계
 
-| 항목                                    | 변경                                                                                                                |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **10팀 다중 발행**                      | `main.ts`에 `LCK_TEAMS` loop 1개 + `landing.ts` 신규 (팀 선택 UI). 단일 fetch → 10팀 filter (네이버 호출 부담 무증가) |
-| **매치 메타 풍부화** (§4.7)             | `Match`에 score·stadium·chzzkChannelId·replayVideoId optional 필드 추가. `description` 게터가 status별 슬롯 조립    |
-| **동기화 메타 RFC 정합** (§4.8)         | `src/sync-meta.ts` 신규 — 이전 ICS의 X-CONTENT-HASH read → SHA-256 diff → SEQUENCE·LAST-MODIFIED 결정              |
-| **SUMMARY/DESC 재설계** (§4.9)          | `LEAGUE_SHORT_CODE` 신규, SUMMARY `[LCK] matchup`, DESC 이모지 일관 (🎯·🎮·🏆·📺·🎬)                                |
-| **SRP 리팩토링**                        | `landing.ts` 거대 함수 분리(STYLES·GUIDE_PANEL·SCRIPT 상수), 팀 변환 로직 `naver.ts → team.ts` 응집, `utc-compact.ts` 신규 |
+| 항목                            | 변경                                                                                                                       |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **10팀 다중 발행**              | `main.ts`에 `LCK_TEAMS` loop 1개 + `landing.ts` 신규 (팀 선택 UI). 단일 fetch → 10팀 filter (네이버 호출 부담 무증가)      |
+| **매치 메타 풍부화** (§4.7)     | `Match`에 score·stadium·chzzkChannelId·replayVideoId optional 필드 추가. `description` 게터가 status별 슬롯 조립           |
+| **동기화 메타 RFC 정합** (§4.8) | `src/sync-meta.ts` 신규 — 이전 ICS의 X-CONTENT-HASH read → SHA-256 diff → SEQUENCE·LAST-MODIFIED 결정                      |
+| **SUMMARY/DESC 재설계** (§4.9)  | `LEAGUE_SHORT_CODE` 신규, SUMMARY `[LCK] matchup`, DESC 이모지 일관 (🎯·🎮·🏆·📺·🎬)                                       |
+| **SRP 리팩토링**                | `landing.ts` 거대 함수 분리(STYLES·GUIDE_PANEL·SCRIPT 상수), 팀 변환 로직 `naver.ts → team.ts` 응집, `utc-compact.ts` 신규 |
 
-→ **본질**: 도메인 narrow waist 보상으로 ②~⑤ 무변경. `Match` 도메인 응집 + `sync-meta.ts`·`utc-compact.ts` 신규 모듈로 SRP 강화. 각 후속 결정의 _문제·근거·한계_는 DECISION_MAKING.md §4.7·§4.8·§4.9 참조.
+→ **본질**: 도메인 narrow waist 보상으로 ②~⑤ 무변경. `Match` 도메인 응집 + `sync-meta.ts`·`utc-compact.ts` 신규 모듈로 SRP 강화. 각 후속 결정의 *문제·근거·한계*는 DECISION_MAKING.md §4.7·§4.8·§4.9 참조.
