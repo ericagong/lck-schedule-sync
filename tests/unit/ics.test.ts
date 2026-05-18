@@ -47,9 +47,9 @@ describe('generateIcs', () => {
     expect(ics).not.toContain('X-WR-TIMEZONE:');
   });
 
-  it('UID는 match.id 기반 (naver: 접두 + @lck-schedule-sync)', () => {
+  it('UID는 match.id 기반 (naver: 접두 + @lck-teams-schedule)', () => {
     const ics = generateIcs([sampleMatch], { calendarName: 'T1' });
-    expect(ics).toContain('UID:naver:115548128962840643@lck-schedule-sync');
+    expect(ics).toContain('UID:naver:115548128962840643@lck-teams-schedule');
   });
 
   it('DTSTART는 UTC compact 형식 (입력 UTC 10:00 → 20260408T100000Z)', () => {
@@ -209,7 +209,7 @@ describe('VEVENT 블록 구조', () => {
 
   it('필수 필드를 모두 포함한다 (UID, DTSTAMP, DTSTART, DTEND, SUMMARY, STATUS, URL)', () => {
     const ics = generateIcs([sampleMatch], { calendarName: 'T1' });
-    expect(ics).toContain('UID:naver:115548128962840643@lck-schedule-sync');
+    expect(ics).toContain('UID:naver:115548128962840643@lck-teams-schedule');
     expect(ics).toContain('DTSTAMP:20260408T100000Z');
     expect(ics).toContain('DTSTART:20260408T100000Z');
     expect(ics).toContain('DTEND:20260408T130000Z');

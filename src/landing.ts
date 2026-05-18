@@ -7,10 +7,10 @@
 
 import { LCK_TEAM_DISPLAY_NAME, type LckTeamCode } from './team.js';
 
-const REPO_URL = 'https://github.com/ericagong/lck-schedule-sync';
+const REPO_URL = 'https://github.com/ericagong/lck-teams-schedule';
 
 export function buildIndexHtml(teams: readonly LckTeamCode[], baseUrl: string): string {
-  // 첫 팀(보통 T1)을 기본 선택 — 페이지 로드 직후 URL이 즉시 표시되어 자연스러운 진입
+  // 첫 팀을 기본 선택 — 페이지 로드 직후 URL이 즉시 표시되어 자연스러운 진입
   const defaultTeam = teams[0];
   const defaultUrl = defaultTeam ? `${baseUrl}/${defaultTeam.toLowerCase()}.ics` : '';
   const defaultName = defaultTeam ? LCK_TEAM_DISPLAY_NAME[defaultTeam] : '';
@@ -29,7 +29,7 @@ export function buildIndexHtml(teams: readonly LckTeamCode[], baseUrl: string): 
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LCK 팀 일정 캘린더 — lck-schedule-sync</title>
+    <title>LCK 팀 일정 캘린더 — lck-teams-schedule</title>
     <meta
       name="description"
       content="LCK 팀별 일정을 자기 캘린더 앱에 자동 동기화하는 ICS 구독 피드."
@@ -306,7 +306,7 @@ ${teamButtons}
         <ol>
           <li><a href="https://outlook.live.com" target="_blank" rel="noopener">outlook.live.com</a> 또는 <a href="https://outlook.office.com" target="_blank" rel="noopener">outlook.office.com</a> 접속</li>
           <li>좌측 <code>캘린더 추가</code> → <code>인터넷에서 구독</code></li>
-          <li>URL 입력 + 이름 지정 (예: "T1 경기 일정")</li>
+          <li>URL 입력 + 이름 지정 (예: "{팀명} 경기 일정")</li>
         </ol>
 
         <h3>모바일 Outlook 앱</h3>

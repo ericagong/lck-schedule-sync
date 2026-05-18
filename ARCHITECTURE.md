@@ -91,7 +91,7 @@ flowchart TD
 | DTSTAMP 안정값                         | `match.startDate` 사용                           | 같은 매치 = 같은 DTSTAMP → cron 재발행 시 캘린더 "업데이트됨" 노이즈 0 |
 | SUMMARY · DESCRIPTION 본문             | `match.ts:Match.summary` / `.description` (게터) | 도메인 표현 응집 — ics.ts는 형식화만                                   |
 | `escapeText` + `foldLine`              | `ics.ts`                                         | RFC 5545: 콤마·세미콜론·줄바꿈 escape + UTF-8 75바이트 라인 폴딩       |
-| UID = `${match.id}@lck-schedule-sync`  | `ics.ts:matchToVeventLines`                      | 멱등성 — 같은 매치 = 같은 UID → 캘린더 중복 없이 갱신                  |
+| UID = `${match.id}@lck-teams-schedule` | `ics.ts:matchToVeventLines`                      | 멱등성 — 같은 매치 = 같은 UID → 캘린더 중복 없이 갱신                  |
 
 **변환 예시** (Match → VEVENT 핵심 라인):
 
@@ -166,7 +166,7 @@ interface Team {
 
 ```
 BEGIN:VEVENT
-UID:naver:2026050117ii8PCnB4429lol@lck-schedule-sync
+UID:naver:2026050117ii8PCnB4429lol@lck-teams-schedule
 DTSTAMP:20260520T100000Z
 DTSTART:20260520T100000Z
 DTEND:20260520T130000Z

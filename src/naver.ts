@@ -191,7 +191,7 @@ function shiftMonth(from: Date, deltaMonths: number): string {
 /* ─────────── Fetch — side effect ─────────── */
 
 const API_BASE = 'https://esports-api.game.naver.com/service/v2';
-const USER_AGENT = 'lck-schedule-sync/0.1 (+https://github.com/ericagong/lck-schedule-sync)';
+const USER_AGENT = 'lck-teams-schedule/0.1 (+https://github.com/ericagong/lck-teams-schedule)';
 
 /** 호출 사이 의도된 버퍼 — burst가 naver IP rate-limit(429)을 트리거하지 않도록. */
 const FETCH_INTERVAL_MS = 500;

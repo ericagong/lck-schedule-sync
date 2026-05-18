@@ -235,7 +235,7 @@ GET https://esports-api.game.naver.com/service/v2/schedule/month
 
 ### Phase 3 구현 시 갖출 모범사례 (7항목)
 
-기본 5: ① User-Agent 명확히 (`lck-schedule-sync/X.X (github URL; 연락처)`) ② 매일 2회 cron 유지 ③ GitHub Actions 24h 캐싱 ④ **네이버 fetch 실패 시 워크플로 실패로 정직히 알림** — GitHub Pages는 마지막 성공본 서빙으로 사용자 캘린더 무손상, 신규 매치만 다음 cron까지 lag ⑤ README에 비공식 API 사용 명시 ⑥ 데이터 출처(네이버 esports) 링크 제공. 비영리 공개 추가: ⑦ MIT 라이센스 (README에 이미 있음) + Takedown 채널 명시 (GitHub issue + 군주 이메일, 네이버 요청 시 즉시 중단 의사, SLA 24h).
+기본 5: ① User-Agent 명확히 (`lck-teams-schedule/X.X (github URL; 연락처)`) ② 매일 2회 cron 유지 ③ GitHub Actions 24h 캐싱 ④ **네이버 fetch 실패 시 워크플로 실패로 정직히 알림** — GitHub Pages는 마지막 성공본 서빙으로 사용자 캘린더 무손상, 신규 매치만 다음 cron까지 lag ⑤ README에 비공식 API 사용 명시 ⑥ 데이터 출처(네이버 esports) 링크 제공. 비영리 공개 추가: ⑦ MIT 라이센스 (README에 이미 있음) + Takedown 채널 명시 (GitHub issue + 군주 이메일, 네이버 요청 시 즉시 중단 의사, SLA 24h).
 
 (4차 결정 후 갱신) ④는 fallback 패턴이 아닌 **fail-loud + 정적 산출물의 자연스러운 안전망** 활용. ICS lifecycle 상 두 소스 간 UID 네임스페이스 전환은 캘린더에 "전체 삭제 + 재추가"로 보여 사용자 메모·알림을 손상시키므로, fallback보다 워크플로 실패가 정직하고 안전하다.
 
@@ -422,7 +422,7 @@ ics.ts에 남아있던 도메인 로직 4개를 Match getter로 이동 — `endD
 - **ICS 파일명**: `{teamCode.toLowerCase()}.ics` (예: t1.ics, gen.ics, krx.ics)
 - **landing 스타일**: pure HTML + 인라인 CSS + vanilla JS — 외부 의존성 0, 빠른 로딩, 자유로운 호스팅
 - **인터랙션**: 팀 클릭 → 구독 URL 표시 + 클립보드 복사 (Google/Apple 직접 추가 링크는 README 위임)
-- **baseUrl 하드코딩**: `https://ericagong.github.io/lck-schedule-sync` (GitHub Pages 외 배포 안 함)
+- **baseUrl 하드코딩**: `https://ericagong.github.io/lck-teams-schedule` (GitHub Pages 외 배포 안 함)
 
 ### 미실행 항목 (Phase 4 잔여)
 

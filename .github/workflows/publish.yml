@@ -77,7 +77,7 @@ jobs:
               `- 직전 commit: \`${context.sha.slice(0, 7)}\``,
               ``,
               `## 다음 단계`,
-              `1. 위 Run 링크에서 로그 확인 — \`[lck-schedule-sync] FATAL:\` 메시지로 원인 파악`,
+              `1. 위 Run 링크에서 로그 확인 — \`[lck-teams-schedule] FATAL:\` 메시지로 원인 파악`,
               `2. 흔한 원인:`,
               `   - 네이버 API 429/500 → 12h 후 cron 자동 재시도 (보통 자가 해결)`,
               `   - 매치 0개 (silent fail) → 네이버 schema 변경 가능성, 수동 점검 필요`,

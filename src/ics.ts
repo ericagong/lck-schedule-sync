@@ -11,7 +11,7 @@ type IcsOptions = {
   readonly calendarName: string;
 };
 
-const PRODID = '-//lck-schedule-sync//T1//KO';
+const PRODID = '-//lck-teams-schedule//KO';
 
 /**
  * ⚠️ 백슬래시를 가장 먼저. 다른 escape가 만든 `\\`가 다시 escape되면 출력이 깨짐.
@@ -82,7 +82,7 @@ function buildCalendarHeader(options: IcsOptions): string[] {
 function matchToVeventLines(match: Match): string[] {
   const lines: string[] = [
     'BEGIN:VEVENT',
-    `UID:${match.id}@lck-schedule-sync`,
+    `UID:${match.id}@lck-teams-schedule`,
     `DTSTAMP:${formatUtcCompact(match.startDate)}`,
     `DTSTART:${formatUtcCompact(match.startDate)}`,
     `DTEND:${formatUtcCompact(match.endDate)}`,

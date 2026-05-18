@@ -1,7 +1,7 @@
 {
-  "name": "lck-schedule-sync",
+  "name": "lck-teams-schedule",
   "version": "0.1.0",
-  "description": "T1 팬을 위한 LCK 일정 자동 동기화 .ics 피드 — 한 경기도 놓치지 않게",
+  "description": "LCK 팬을 위한 팀별 일정 자동 동기화 .ics 피드 — 한 경기도 놓치지 않게",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@9.15.9",

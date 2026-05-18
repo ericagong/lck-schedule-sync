@@ -4,7 +4,7 @@
 // last-modified 헤더로 배포 시점(KST) + 매치 수·크기 요약 + ICS 전체 출력.
 // CDN 캐시 우회를 위해 쿼리스트링에 timestamp를 붙임.
 
-const BASE_URL = 'https://ericagong.github.io/lck-schedule-sync';
+const BASE_URL = 'https://ericagong.github.io/lck-teams-schedule';
 const VALID_TEAMS = ['t1', 'gen', 'hle', 'dk', 'kt', 'krx', 'bro', 'bfx', 'ns', 'dns'] as const;
 type TeamCode = (typeof VALID_TEAMS)[number];
 

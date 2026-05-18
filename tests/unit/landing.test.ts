@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildIndexHtml } from '../../src/landing.js';
 import { LCK_TEAMS } from '../../src/team.js';
 
-const BASE_URL = 'https://ericagong.github.io/lck-schedule-sync';
+const BASE_URL = 'https://ericagong.github.io/lck-teams-schedule';
 
 describe('buildIndexHtml — 정적 HTML 생성 (순수 함수)', () => {
   it('HTML 5 doctype + lang="ko"', () => {
@@ -46,7 +46,7 @@ describe('buildIndexHtml — 정적 HTML 생성 (순수 함수)', () => {
 
   it('footer에 GitHub repo 링크', () => {
     const html = buildIndexHtml(LCK_TEAMS, BASE_URL);
-    expect(html).toContain('https://github.com/ericagong/lck-schedule-sync');
+    expect(html).toContain('https://github.com/ericagong/lck-teams-schedule');
   });
 
   it('빈 팀 배열도 유효한 HTML (결과 박스 숨김)', () => {

@@ -1,4 +1,4 @@
-# lck-schedule-sync
+# lck-teams-schedule
 
 > **단 한 경기도 놓치지 않게.** LCK 팬을 위한 팀별 일정 자동 동기화 `.ics` 피드.
 
@@ -21,24 +21,24 @@
 
 ### 👉 팀 선택 페이지 (가장 쉬움)
 
-<https://ericagong.github.io/lck-schedule-sync/>
+<https://ericagong.github.io/lck-teams-schedule/>
 
 응원 팀을 클릭하면 구독 URL이 나옵니다. 복사해서 캘린더 앱에 붙여넣기.
 
 ### 직접 URL (LCK 10팀 전체)
 
-| 팀                 | 구독 URL                                                |
-| ------------------ | ------------------------------------------------------- |
-| T1                 | `https://ericagong.github.io/lck-schedule-sync/t1.ics`  |
-| 젠지 (GEN)         | `https://ericagong.github.io/lck-schedule-sync/gen.ics` |
-| 한화생명 (HLE)     | `https://ericagong.github.io/lck-schedule-sync/hle.ics` |
-| 디플러스 기아 (DK) | `https://ericagong.github.io/lck-schedule-sync/dk.ics`  |
-| KT                 | `https://ericagong.github.io/lck-schedule-sync/kt.ics`  |
-| KRX                | `https://ericagong.github.io/lck-schedule-sync/krx.ics` |
-| 한진 브리온 (BRO)  | `https://ericagong.github.io/lck-schedule-sync/bro.ics` |
-| BNK 피어엑스 (BFX) | `https://ericagong.github.io/lck-schedule-sync/bfx.ics` |
-| 농심 (NS)          | `https://ericagong.github.io/lck-schedule-sync/ns.ics`  |
-| DN 수퍼스 (DNS)    | `https://ericagong.github.io/lck-schedule-sync/dns.ics` |
+| 팀                 | 구독 URL                                                 |
+| ------------------ | -------------------------------------------------------- |
+| T1                 | `https://ericagong.github.io/lck-teams-schedule/t1.ics`  |
+| 젠지 (GEN)         | `https://ericagong.github.io/lck-teams-schedule/gen.ics` |
+| 한화생명 (HLE)     | `https://ericagong.github.io/lck-teams-schedule/hle.ics` |
+| 디플러스 기아 (DK) | `https://ericagong.github.io/lck-teams-schedule/dk.ics`  |
+| KT                 | `https://ericagong.github.io/lck-teams-schedule/kt.ics`  |
+| KRX                | `https://ericagong.github.io/lck-teams-schedule/krx.ics` |
+| 한진 브리온 (BRO)  | `https://ericagong.github.io/lck-teams-schedule/bro.ics` |
+| BNK 피어엑스 (BFX) | `https://ericagong.github.io/lck-teams-schedule/bfx.ics` |
+| 농심 (NS)          | `https://ericagong.github.io/lck-teams-schedule/ns.ics`  |
+| DN 수퍼스 (DNS)    | `https://ericagong.github.io/lck-teams-schedule/dns.ics` |
 
 각 ICS는 해당 팀의 출전 매치(LCK 정규시즌·플옵·결승 + MSI·Worlds·FST·EWC·KeSPA 등 T1처럼 출전 시 자연 포함)만 담습니다.
 
@@ -173,7 +173,7 @@ ICS 파일을 캘린더 거치지 않고 직접 검증:
 
 ```bash
 # 터미널 (curl 가능하면 가장 빠름)
-curl -s https://ericagong.github.io/lck-schedule-sync/t1.ics | grep -A 1 SUMMARY
+curl -s https://ericagong.github.io/lck-teams-schedule/t1.ics | grep -A 1 SUMMARY
 ```
 
 또는 브라우저 — online ICS viewer에 URL 붙여넣기:
@@ -181,7 +181,7 @@ curl -s https://ericagong.github.io/lck-schedule-sync/t1.ics | grep -A 1 SUMMARY
 - <https://larrybolt.github.io/online-ics-feed-viewer/>
 - <https://icalendar.org/validator.html>
 
-> ⚠️ viewer에 URL 넣을 때는 반드시 **`/팀코드.ics`까지 포함**. 루트 URL(`/`)은 팀 선택 페이지로 가니까 viewer엔 안 됨. 정확한 형식: `https://ericagong.github.io/lck-schedule-sync/t1.ics` (다른 팀은 위 표 참조)
+> ⚠️ viewer에 URL 넣을 때는 반드시 **`/팀코드.ics`까지 포함**. 루트 URL(`/`)은 팀 선택 페이지로 가니까 viewer엔 안 됨. 정확한 형식: `https://ericagong.github.io/lck-teams-schedule/t1.ics` (다른 팀은 위 표 참조)
 
 ### 2. 산출물에는 있는데 캘린더에 없음 = 캐싱 lag
 
@@ -190,7 +190,7 @@ Google Calendar fetch 캐시가 갱신 안 됨. 즉시 해결 두 가지:
 **옵션 A — URL에 dummy query 붙여 재구독 (가장 확실)**:
 
 ```text
-https://ericagong.github.io/lck-schedule-sync/t1.ics?v=20260517
+https://ericagong.github.io/lck-teams-schedule/t1.ics?v=20260517
 ```
 
 `?v=...` 부분은 우리 서버가 무시 (같은 파일 서빙). Google은 "새 URL"로 인식해 캐시 거치지 않고 즉시 fetch. 새 캘린더로 등록 후 기존 구독은 삭제.
@@ -204,7 +204,7 @@ https://ericagong.github.io/lck-schedule-sync/t1.ics?v=20260517
 ### 3. 산출물에도 없음 = 데이터 등록 lag 또는 우리 버그
 
 - **데이터 등록 lag**: 네이버가 아직 해당 매치를 등록 안 함. 매일 2회 cron이 자동 흡수 (최대 12h)
-- **우리 버그 의심**: [GitHub Issue](https://github.com/ericagong/lck-schedule-sync/issues) 부탁
+- **우리 버그 의심**: [GitHub Issue](https://github.com/ericagong/lck-teams-schedule/issues) 부탁
 
 > 참고: Road to EWC·EWC 본선은 별도 데이터. Road to EWC는 LCK 진출 선발전(`ewc_lol` endpoint)으로 흡수되어 발행됨. EWC 본선은 네이버가 사우디 본선 일정 발표 후 등록.
 
@@ -222,7 +222,7 @@ https://ericagong.github.io/lck-schedule-sync/t1.ics?v=20260517
 
 네이버에서 데이터 사용 중단 요청 시 24시간 안에 응답합니다. 운영 채널:
 
-- **GitHub Issue**: [Issues](https://github.com/ericagong/lck-schedule-sync/issues) (가장 빠름)
+- **GitHub Issue**: [Issues](https://github.com/ericagong/lck-teams-schedule/issues) (가장 빠름)
 - **이메일**: <the.erica.gong@gmail.com>
 
 ## 더 읽기

@@ -13,8 +13,8 @@ import { fetchAllMatches } from './naver.js';
 import { LCK_TEAM_DISPLAY_NAME, LCK_TEAMS, type LckTeamCode } from './team.js';
 
 const PUBLIC_DIR = resolve('public');
-const BASE_URL = 'https://ericagong.github.io/lck-schedule-sync';
-const LOG_PREFIX = '[lck-schedule-sync]';
+const BASE_URL = 'https://ericagong.github.io/lck-teams-schedule';
+const LOG_PREFIX = '[lck-teams-schedule]';
 
 const log = {
   info: (msg: string) => console.log(`${LOG_PREFIX} ${msg}`),
